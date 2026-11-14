@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+import { realpathSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { scan } from '../src/scan.js';
+import { revive } from '../src/revive.js';
+import { snapshot, isDestructive, handleHook, installClaudeHook } from '../src/ward.js';
+import { renderTomb, bold, dim } from '../src/format.js';
+
+const HELP = `graveyard: raise the work git lost
+
+  graveyard [scan] [--json] [--no-ghosts]   list lost commits, stashes, ghosts and ward snapshots
+  graveyard revive <id>                     bring one back on a new branch (touches nothing you have)
+  graveyard ward snapshot [reason]          save all work now (staged, unstaged, untracked)
+  graveyard ward run -- <command...>        snapshot first if the command is destructive, then run it
+  graveyard ward hook                       Claude Code PreToolUse hook (reads JSON on stdin)
+  graveyard ward install                    add the hook to .claude/settings.json in this repo
+  graveyard ward list                       list ward snapshots
+`;
+
+const [cmd = 'scan', ...rest] = process.argv.slice(2);
+const flags = new Set(rest.filter((a) => a.startsWith('--')));
+const args = rest.filter((a) => !a.startsWith('--'));
+
+async function readStdin() {
+  const chunks = [];
+  for await (const c of process.stdin) chunks.push(c);
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+try {
+  if (cmd === 'help' || cmd === '--help' || cmd === '-h') {
+    process.stdout.write(HELP);
+  } else if (cmd === 'scan' || cmd === '--json' || cmd === '--no-ghosts') {
+    const f = new Set([...flags, ...(cmd.startsWith('--') ? [cmd] : [])]);
+    const { top, tombstones } = scan(process.cwd(), { ghosts: !f.has('--no-ghosts') });
+    if (f.has('--json')) {
+      console.log(JSON.stringify(tombstones, (k, v) => (v === Infinity ? null : v), 2));
+    } else if (!tombstones.length) {
+      console.log(`${bold('The graveyard is empty.')} ${dim(top)}`);
+    } else {
+      console.log(`${bold('Graveyard')} ${dim(top)}\n`);
+      for (const t of tombstones) console.log(renderTomb(t) + '\n');
+      console.log(dim('Bring one back: graveyard revive <id>'));
+    }
+  } else if (cmd === 'revive') {
+    if (!args[0]) throw new Error('usage: graveyard revive <id>');
+    const r = revive(process.cwd(), args[0]);
+    console.log(`Raised ${r.tomb.id} on branch ${bold(r.branch)}${r.file ? ` (file at ${r.file})` : ''}.`);
+    console.log(dim(`Look: git switch ${r.branch}   Your current branch and files are unchanged.`));
+  } else if (cmd === 'ward') {
+    const [sub, ...wargs] = rest;
+    if (sub === 'snapshot') {
+      const r = snapshot(process.cwd(), wargs.join(' ') || 'manual snapshot');
+      console.log(r ? `Saved ${r.ref} (${r.sha.slice(0, 7)})` : 'Nothing to save: work tree matches HEAD.');
+    } else if (sub === 'hook') {
+      handleHook(await readStdin());
+    } else if (sub === 'run') {
+      const command = wargs[0] === '--' ? wargs.slice(1) : wargs;
+      if (!command.length) throw new Error('usage: graveyard ward run -- <command...>');
+      if (isDestructive(command.join(' '))) {
+        const r = snapshot(process.cwd(), command.join(' ').slice(0, 120));
+        if (r) console.error(dim(`ward: saved ${r.ref}`));
+      }
+      process.exit(spawnSync(command[0], command.slice(1), { stdio: 'inherit' }).status ?? 1);
+    } else if (sub === 'install') {
+      const bin = realpathSync(fileURLToPath(import.meta.url));
+      const r = installClaudeHook(process.cwd(), `node ${JSON.stringify(bin)} ward hook`);
+      console.log(r.added ? `Ward installed in ${r.file}` : `Ward already installed in ${r.file}`);
+    } else if (sub === 'list') {
+      const { tombstones } = scan(process.cwd(), { ghosts: false });
+      for (const t of tombstones.filter((x) => x.kind === 'ward')) console.log(renderTomb(t) + '\n');
+    } else {
+      process.stdout.write(HELP);
+      process.exitCode = 1;
+    }
+  } else {
+    process.stdout.write(HELP);
+    process.exitCode = 1;
+  }
+} catch (e) {
+  console.error(`graveyard: ${e.message}`);
+  process.exit(1);
+}
