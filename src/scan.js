@@ -100,6 +100,12 @@ function commitTombstones(top, lost, cfg, now) {
       tryGit(top, base ? ['diff', '--name-only', base, tip.sha] : ['show', '--name-only', '--format=', tip.sha]),
     );
     const meta = lost.get(tip.sha);
+    // `branch -D` leaves no reflog line. The HEAD line after the last commit says "checkout: moving from X",
+    // so when X no longer exists, X was deleted.
+    const moved = meta.killer?.match(/^checkout: moving from (\S+) to /);
+    if (moved && tryGit(top, ['rev-parse', '--verify', '-q', `refs/heads/${moved[1]}`]) === null) {
+      meta.killer = `branch ${moved[1]} deleted`;
+    }
     const isStash = STASH_RE.test(tip.subject) && tip.parents.length >= 2;
     const died = meta.killedAt ?? tip.at;
     const span = meta.inReflog ? cfg.reflogMs : cfg.pruneMs;

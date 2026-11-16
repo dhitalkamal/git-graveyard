@@ -172,3 +172,15 @@ test('parseDuration reads git expiry values', () => {
   assert.equal(parseDuration('now'), 0);
   assert.equal(parseDuration(undefined, 5), 5);
 });
+
+test('deleted branch names the branch as the killer', () => {
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  sh(d, 'switch', '-qc', 'feature');
+  commit(d, 'b.txt', 'b\n', 'feature work');
+  sh(d, 'switch', '-q', 'main');
+  sh(d, 'branch', '-D', 'feature');
+  const t = scan(d).tombstones.find((x) => x.title === 'feature work');
+  assert.equal(t.killer, 'branch feature deleted');
+  rmSync(d, { recursive: true, force: true });
+});
