@@ -99,3 +99,13 @@ export function installClaudeHook(cwd, hookCommand) {
   writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
   return { file, added: !present };
 }
+
+/** Delete one ward snapshot. Only refs under refs/graveyard/ward/, and only if it still points at `sha`. */
+export function deleteWard(cwd, ref, sha) {
+  if (typeof ref !== 'string' || !/^refs\/graveyard\/ward\/[\w.-]+$/.test(ref)) throw new Error(`not a ward ref: ${ref}`);
+  const top = repoTop(cwd);
+  const args = ['update-ref', '-d', ref];
+  if (sha) args.push(sha); // refuse if the ref moved since we looked
+  git(top, args);
+  return { ref };
+}

@@ -59,6 +59,8 @@
   .diff .l-hunk { color:#79a8d9; background:#101823; } .diff .l-meta { color:var(--dim); }
   button.raise { width:100%; background:#22303f; color:var(--fg); border:1px solid #3a4b60; border-radius:8px; padding:10px; cursor:pointer; font:inherit; }
   button.raise:hover { background:#2a3b4e; } button.raise:disabled { opacity:.5; cursor:default; }
+  button.bury { width:100%; margin-top:8px; background:transparent; color:#f08a93; border:1px solid #5a2b31; border-radius:8px; padding:8px; cursor:pointer; font:inherit; }
+  button.bury:hover { background:#2a1519; } button.bury.armed { background:#5a1f27; color:#fff; border-color:#d9606b; } button.bury:disabled { opacity:.5; cursor:default; }
   .done { margin-top:10px; color:var(--fresh); word-break:break-all; } .err { margin-top:10px; color:var(--crumbling); }
   .tip { position:fixed; pointer-events:none; background:rgba(10,14,20,.94); border:1px solid #2b3442; border-radius:8px; padding:8px 11px; font-size:12px; transform:translate(14px, 14px); max-width:340px; }
   .tip .k { font-size:10px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase; }
@@ -675,6 +677,32 @@ function openPanel(t) {
     } catch (e) { out.className = 'err'; out.textContent = e.message; b.disabled = false; }
   };
   const foot = el('div', { className:'pf' }, b, out);
+  if (t.kind === 'ward') {
+    // two clicks: the first arms it, the second deletes; arming times out after 4 s
+    const del = el('button', { className:'bury', textContent:'Delete this ward' });
+    let armed = null;
+    del.onclick = async () => {
+      if (!armed) {
+        del.classList.add('armed'); del.textContent = 'Click again to delete for good';
+        armed = setTimeout(() => { armed = null; del.classList.remove('armed'); del.textContent = 'Delete this ward'; }, 4000);
+        return;
+      }
+      clearTimeout(armed); armed = null;
+      del.disabled = true; b.disabled = true;
+      try {
+        const r = await fetch('/api/ward/delete', { method:'POST', headers:{ 'x-graveyard-token':TOKEN, 'content-type':'application/json' }, body:JSON.stringify({ id:t.id }) });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error);
+        out.className = 'note';
+        out.textContent = 'Deleted ' + j.deleted + '. Undo, until git prunes it: git update-ref ' + j.deleted + ' ' + t.sha;
+        del.textContent = 'Deleted';
+        if (o) bury(o);
+        data.tombstones = data.tombstones.filter((x) => x.id !== t.id);
+        renderTabs();
+      } catch (e) { out.className = 'err'; out.textContent = e.message; del.disabled = false; b.disabled = false; del.classList.remove('armed'); del.textContent = 'Delete this ward'; }
+    };
+    foot.append(del);
+  }
   p.replaceChildren(head, body, foot);
   p.classList.add('open');
 }
@@ -742,6 +770,20 @@ function stepResurrection(o, t) {
   return { rise:up * 0.9 + bob, spin };
 }
 
+/* a deleted ward sinks into the ground, then leaves the scene */
+function bury(o) { o.userData.buriedAt = clock.getElapsedTime() - (reduceMotion ? 10 : 0); }
+function stepBurial(o, t) {
+  const u = o.userData, k = span(0, 1.6, t - u.buriedAt);
+  u.body.position.x = k < 0.5 ? Math.sin(t * 60) * 0.03 * (1 - k * 2) : 0;
+  u.body.position.y = u.baseY - smooth(k) * 1.8;
+  u.glow.material.opacity = 0.32 * (1 - k);
+  if (k >= 1) {
+    graves.remove(o);
+    pickables = pickables.filter((x) => x !== o);
+    if (hovered === o) hovered = null;
+  }
+}
+
 /* camera glides to the grave you open */
 let focus = null;
 function focusOn(p) { focus = new THREE.Vector3(p.x, 0.7, p.z); }
@@ -752,7 +794,8 @@ const tmp = new THREE.Vector3();
 function tick(now) {
   timer.update(now);
   const t = clock.getElapsedTime();
-  for (const o of pickables) {
+  for (const o of [...pickables]) {
+    if (o.userData.buriedAt != null) { stepBurial(o, t); continue; }
     const u = o.userData, sel = u.tomb.id === selected, hov = o === hovered;
     const res = u.res ? stepResurrection(o, t) : null;
     const lift = res ? res.rise : (sel ? 0.16 : hov ? 0.08 : 0);

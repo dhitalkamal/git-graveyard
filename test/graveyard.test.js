@@ -344,3 +344,34 @@ test('detail endpoint answers for known ids only', async () => {
     rmSync(d, { recursive: true, force: true });
   }
 });
+
+test('delete ward: API needs token, only deletes wards, CLI and scan agree', async () => {
+  const { startServer } = await import('../src/server.js');
+  const { deleteWard } = await import('../src/ward.js');
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  commit(d, 'a.txt', '2\n', 'lost');
+  sh(d, 'reset', '-q', '--hard', 'HEAD~1');
+  writeFileSync(join(d, 'a.txt'), 'wip\n');
+  const snap = snapshot(d, 'git reset --hard');
+  assert.throws(() => deleteWard(d, 'refs/heads/main'), /not a ward ref/);
+
+  const { server, url, token } = await startServer(d, { port: 0 });
+  try {
+    const { tombstones } = await (await fetch(url + 'api/tombs')).json();
+    const w = tombstones.find((t) => t.kind === 'ward');
+    const c = tombstones.find((t) => t.kind === 'commit');
+    const post = (id, headers = { 'x-graveyard-token': token }) => fetch(url + 'api/ward/delete', { method: 'POST', headers, body: JSON.stringify({ id }) });
+    assert.equal((await post(w.id, {})).status, 403);
+    assert.equal((await post(c.id)).status, 400, 'a lost commit cannot be deleted');
+    assert.equal((await post(w.id)).status, 200);
+    assert.equal(sh(d, 'for-each-ref', 'refs/graveyard'), '');
+    const after = scan(d).tombstones;
+    assert.ok(!after.some((t) => t.kind === 'ward'));
+    const ghost = after.find((t) => t.sha === snap.sha);
+    assert.match(ghost.headline, /^Deleted ward: snapshot before git reset --hard/);
+  } finally {
+    server.close();
+    rmSync(d, { recursive: true, force: true });
+  }
+});

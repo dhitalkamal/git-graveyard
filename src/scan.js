@@ -114,6 +114,11 @@ function commitTombstones(top, lost, cfg, now) {
     const deadline = died + span;
     let origin = meta.origin;
     let headline = tip.subject;
+    // a ward snapshot whose ref was deleted: still here until git prunes it
+    if (tip.author === 'Graveyard ward' && tip.subject.startsWith('ward: ')) {
+      headline = 'Deleted ward: snapshot before ' + tip.subject.slice(6);
+      meta.killer ??= 'ward deleted';
+    }
     if (isStash) {
       // "WIP on main: abc123 subject" is git's own text; "On main: my message" is the user's
       const m = tip.subject.match(/^(WIP on|On) ([^:]+): (.*)$/);

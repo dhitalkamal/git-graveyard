@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { scan } from '../src/scan.js';
 import { revive } from '../src/revive.js';
-import { snapshot, isDestructive, handleHook, installClaudeHook } from '../src/ward.js';
+import { snapshot, isDestructive, handleHook, installClaudeHook, deleteWard } from '../src/ward.js';
 import { renderTomb, bold, dim } from '../src/format.js';
 import { startServer } from '../src/server.js';
 import { installShim, uninstallShim, wardCheck, defaultShimDir } from '../src/shim.js';
@@ -22,6 +22,7 @@ const HELP = `graveyard: raise the work git lost
   graveyard ward hook                       Claude Code PreToolUse hook (reads JSON on stdin)
   graveyard ward install                    add the hook to .claude/settings.json in this repo
   graveyard ward list                       list ward snapshots
+  graveyard ward delete <id>                delete one ward snapshot for good
   graveyard ward shim [--dir D]             install a git shim that guards every agent and shell
   graveyard ward unshim [--dir D]           remove the git shim
 `;
@@ -120,6 +121,15 @@ try {
           console.log(`Or only for one agent:  PATH="${r.dir}:$PATH" claude`);
         } else console.log('It is first on PATH and active.');
       }
+    } else if (sub === 'delete') {
+      const id = wargs[0];
+      if (!id) throw new Error('usage: graveyard ward delete <id>');
+      const { tombstones } = scan(process.cwd(), { ghosts: false });
+      const t = tombstones.find((x) => x.kind === 'ward' && (x.id === id || x.id === `w:${id}`));
+      if (!t) throw new Error(`no ward snapshot matches "${id}"`);
+      deleteWard(process.cwd(), t.ref, t.sha);
+      console.log(`Deleted ${t.ref} (${t.sha.slice(0, 7)})`);
+      console.log(dim(`Changed your mind? Within git's prune window: git update-ref ${t.ref} ${t.sha}`));
     } else if (sub === 'list') {
       const { tombstones } = scan(process.cwd(), { ghosts: false });
       for (const t of tombstones.filter((x) => x.kind === 'ward')) console.log(renderTomb(t) + '\n');

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { scan } from './scan.js';
 import { revive } from './revive.js';
 import { detailOf } from './changes.js';
+import { deleteWard } from './ward.js';
 
 const PAGE = readFileSync(fileURLToPath(new URL('./ui.html', import.meta.url)), 'utf8');
 const THREE_ROOT = dirname(dirname(createRequire(import.meta.url).resolve('three')));
@@ -69,7 +70,7 @@ export function startServer(repo, { port = 4747 } = {}) {
         if (!t) return json(res, 404, { error: 'unknown tombstone; reload the page' });
         return json(res, 200, detailOf(repo, t));
       }
-      if (req.method === 'POST' && url.pathname === '/api/revive') {
+      if (req.method === 'POST' && (url.pathname === '/api/revive' || url.pathname === '/api/ward/delete')) {
         if (req.headers['x-graveyard-token'] !== token) return json(res, 403, { error: 'bad token' });
         let body = '';
         req.on('data', (c) => {
@@ -80,8 +81,15 @@ export function startServer(repo, { port = 4747 } = {}) {
           try {
             const { id } = JSON.parse(body);
             if (typeof id !== 'string') return json(res, 400, { error: 'id required' });
-            const r = revive(repo, id);
-            json(res, 200, { branch: r.branch, file: r.file });
+            if (url.pathname === '/api/revive') {
+              const r = revive(repo, id);
+              return json(res, 200, { branch: r.branch, file: r.file });
+            }
+            const t = known.get(id);
+            if (!t || t.kind !== 'ward') return json(res, 400, { error: 'only ward snapshots can be deleted' });
+            deleteWard(repo, t.ref, t.sha);
+            known.delete(id);
+            json(res, 200, { deleted: t.ref });
           } catch (e) {
             json(res, 400, { error: e.message });
           }
