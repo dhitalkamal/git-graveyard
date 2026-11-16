@@ -184,3 +184,39 @@ test('deleted branch names the branch as the killer', () => {
   assert.equal(t.killer, 'branch feature deleted');
   rmSync(d, { recursive: true, force: true });
 });
+
+test('ui server: serves page, lists tombs, revive needs token, rejects bad host', async () => {
+  const { startServer } = await import('../src/server.js');
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  commit(d, 'a.txt', '2\n', 'lost one');
+  sh(d, 'reset', '-q', '--hard', 'HEAD~1');
+  const { server, url, token } = await startServer(d, { port: 0 });
+  try {
+    const page = await (await fetch(url)).text();
+    assert.ok(page.includes(token));
+    const script = page.match(/<script>([\s\S]*)<\/script>/)[1];
+    assert.doesNotThrow(() => new Function(script), 'ui script parses');
+
+    const tombs = await (await fetch(url + 'api/tombs')).json();
+    const t = tombs.tombstones.find((x) => x.title === 'lost one');
+    assert.ok(t);
+
+    const post = (headers) => fetch(url + 'api/revive', { method: 'POST', headers, body: JSON.stringify({ id: t.id }) });
+    assert.equal((await post({})).status, 403);
+    const ok = await post({ 'x-graveyard-token': token });
+    assert.equal(ok.status, 200);
+    assert.match((await ok.json()).branch, /^graveyard\//);
+
+    const bad = await new Promise((resolve) => {
+      import('node:http').then(({ request }) => {
+        const u = new URL(url);
+        request({ host: '127.0.0.1', port: u.port, path: '/api/tombs', headers: { host: 'evil.example' } }, (r) => resolve(r.statusCode)).end();
+      });
+    });
+    assert.equal(bad, 403);
+  } finally {
+    server.close();
+    rmSync(d, { recursive: true, force: true });
+  }
+});

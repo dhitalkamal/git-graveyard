@@ -6,10 +6,13 @@ import { scan } from '../src/scan.js';
 import { revive } from '../src/revive.js';
 import { snapshot, isDestructive, handleHook, installClaudeHook } from '../src/ward.js';
 import { renderTomb, bold, dim } from '../src/format.js';
+import { startServer } from '../src/server.js';
+import { repoTop } from '../src/git.js';
 
 const HELP = `graveyard: raise the work git lost
 
   graveyard [scan] [--json] [--no-ghosts]   list lost commits, stashes, ghosts and ward snapshots
+  graveyard ui [--port N]                   open the cemetery in your browser (127.0.0.1 only)
   graveyard revive <id>                     bring one back on a new branch (touches nothing you have)
   graveyard ward snapshot [reason]          save all work now (staged, unstaged, untracked)
   graveyard ward run -- <command...>        snapshot first if the command is destructive, then run it
@@ -43,6 +46,12 @@ try {
       for (const t of tombstones) console.log(renderTomb(t) + '\n');
       console.log(dim('Bring one back: graveyard revive <id>'));
     }
+  } else if (cmd === 'ui') {
+    const pi = rest.indexOf('--port');
+    const port = pi >= 0 ? Number(rest[pi + 1]) : 4747;
+    const { url } = await startServer(repoTop(process.cwd()), { port });
+    console.log(`The cemetery is open at ${url}  (Ctrl+C to close)`);
+    if (!flags.has('--no-open') && process.platform === 'darwin') spawnSync('open', [url]);
   } else if (cmd === 'revive') {
     if (!args[0]) throw new Error('usage: graveyard revive <id>');
     const r = revive(process.cwd(), args[0]);
