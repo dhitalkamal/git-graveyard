@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Graveyard ward",
+      "description": "Dogfood: snapshot all work (even unstaged and untracked files) before the agent runs a destructive git command in this repo. Never blocks the command.",
+      "trigger": "PreToolUse",
+      "matcher": "shell|executeBash|execute_bash",
+      "action": { "type": "command", "command": "node bin/graveyard.js ward hook" },
+      "timeout": 30
+    }
+  ]
+}

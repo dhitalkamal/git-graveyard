@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { scan } from '../src/scan.js';
 import { revive } from '../src/revive.js';
-import { snapshot, isDestructive, handleHook, installClaudeHook, deleteWard } from '../src/ward.js';
+import { snapshot, isDestructive, handleHook, installClaudeHook, installKiroHook, deleteWard } from '../src/ward.js';
 import { renderTomb, bold, dim } from '../src/format.js';
 import { startServer } from '../src/server.js';
 import { installShim, uninstallShim, wardCheck, defaultShimDir } from '../src/shim.js';
@@ -24,7 +24,7 @@ const HELP = `graveyard: raise the work git lost
   graveyard ward snapshot [reason]          save all work now (staged, unstaged, untracked)
   graveyard ward run -- <command...>        snapshot first if the command is destructive, then run it
   graveyard ward hook                       Claude Code PreToolUse hook (reads JSON on stdin)
-  graveyard ward install                    add the hook to .claude/settings.json in this repo
+  graveyard ward install [--kiro|--claude]  add the ward hook to .kiro/hooks and .claude/settings.json
   graveyard ward list                       list ward snapshots
   graveyard ward delete <id>                delete one ward snapshot for good
   graveyard ward shim [--dir D]             install a git shim that guards every agent and shell
@@ -102,7 +102,12 @@ try {
       const r = snapshot(process.cwd(), wargs.join(' ') || 'manual snapshot');
       console.log(r ? `Saved ${r.ref} (${r.sha.slice(0, 7)})` : 'Nothing to save: work tree matches HEAD.');
     } else if (sub === 'hook') {
-      handleHook(await readStdin());
+      // must exit 0 whatever happens: Kiro and Claude Code block the tool on a non-zero exit
+      try {
+        const r = handleHook(await readStdin());
+        if (r) console.error(`graveyard ward: saved ${r.ref}`);
+      } catch {}
+      process.exit(0);
     } else if (sub === 'run') {
       const command = wargs[0] === '--' ? wargs.slice(1) : wargs;
       if (!command.length) throw new Error('usage: graveyard ward run -- <command...>');
@@ -113,8 +118,17 @@ try {
       process.exit(spawnSync(command[0], command.slice(1), { stdio: 'inherit' }).status ?? 1);
     } else if (sub === 'install') {
       const bin = realpathSync(fileURLToPath(import.meta.url));
-      const r = installClaudeHook(process.cwd(), `node ${JSON.stringify(bin)} ward hook`);
-      console.log(r.added ? `Ward installed in ${r.file}` : `Ward already installed in ${r.file}`);
+      const hookCmd = `node ${JSON.stringify(bin)} ward hook`;
+      const kiro = flags.has('--kiro') || !flags.has('--claude');
+      const claude = flags.has('--claude') || !flags.has('--kiro');
+      if (kiro) {
+        const r = installKiroHook(process.cwd(), hookCmd);
+        console.log(r.added ? `Ward installed for Kiro: ${r.file}` : `Ward updated for Kiro: ${r.file}`);
+      }
+      if (claude) {
+        const r = installClaudeHook(process.cwd(), hookCmd);
+        console.log(r.added ? `Ward installed for Claude Code: ${r.file}` : `Ward already installed for Claude Code: ${r.file}`);
+      }
     } else if (sub === 'check') {
       const r = wardCheck(wargs);
       if (r) console.error(`graveyard ward: saved ${r.ref} before "git ${wargs.join(' ')}"`);

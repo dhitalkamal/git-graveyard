@@ -10,8 +10,8 @@ You just can't see them. Graveyard shows them to you, tells you what each one ho
 brings any of them back on a new branch without touching the work you have now.
 
 ```
-npx graveyard        # list the dead
-npx graveyard ui     # walk the cemetery in 3D
+npx git-graveyard        # list the dead
+npx git-graveyard ui     # walk the cemetery in 3D
 ```
 
 ## What it finds
@@ -38,16 +38,28 @@ file against the lost version.
 
 ## Install
 
-Needs Node 18+ and git.
+Needs Node 18+ and git. The npm package is `git-graveyard` (the name `graveyard`
+belongs to an unrelated package).
 
 ```
-npx graveyard
+npx git-graveyard
 ```
 
-or install it globally:
+or install it globally, which gives you both `git-graveyard` and `graveyard`:
 
 ```
-npm install -g graveyard
+npm install -g git-graveyard
+```
+
+### Try it in 2 minutes, no risk to your own repos
+
+```
+git clone <this repo> graveyard && cd graveyard
+npm install
+./scripts/sandbox.sh                 # builds ../graveyard-sandbox, a repo full of git disasters
+cd ../graveyard-sandbox
+node ../graveyard/bin/graveyard.js   # list the dead
+node ../graveyard/bin/graveyard.js ui
 ```
 
 ## Commands
@@ -159,14 +171,17 @@ PATH="$HOME/.graveyard/bin:$PATH" codex
 
 Turn it off with `graveyard ward unshim`.
 
-### Claude Code: the hook
+### Kiro and Claude Code: the hook
 
 ```
-graveyard ward install
+graveyard ward install            # both
+graveyard ward install --kiro     # .kiro/hooks/graveyard-ward.json
+graveyard ward install --claude   # .claude/settings.json
 ```
 
-This adds a `PreToolUse` hook for the `Bash` tool to `.claude/settings.json` in the repo.
-The hook reads the command, snapshots if it's destructive, and lets it run.
+This adds a `PreToolUse` hook on the agent's shell tool. The hook reads the command,
+snapshots if it's destructive, and lets it run. It always exits 0, because Kiro and
+Claude Code block the tool when a `PreToolUse` command fails.
 
 ### By hand
 

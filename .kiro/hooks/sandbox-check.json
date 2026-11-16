@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Rebuild sandbox after scan changes",
+      "description": "When the agent edits how graves are found, rebuild the sandbox and ask it to compare the scan with the expected graves.",
+      "trigger": "PostFileSave",
+      "matcher": "(^|/)src/(scan|changes|filter)\\.js$|(^|/)scripts/sandbox\\.sh$",
+      "action": {
+        "type": "agent",
+        "prompt": "You changed grave detection. Run ./scripts/sandbox.sh, then `node bin/graveyard.js scan --json` inside ../graveyard-sandbox. Check that it still finds: lost commits from reset --hard, the deleted feature/payments branch, the big refactor, the dying experiment (under 1 day left), the edited-lines commit, the dropped stash on main, and the util.js ghost. Report any grave that is missing or has a wrong headline, summary, origin or time left."
+      }
+    }
+  ]
+}

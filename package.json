@@ -1,14 +1,17 @@
 {
-  "name": "graveyard",
+  "name": "git-graveyard",
   "version": "0.1.0",
   "description": "Raise the work git lost. Finds dropped commits, stashes, branches and nameless files, and snapshots your work before an agent runs a destructive git command.",
   "type": "module",
   "bin": {
+    "git-graveyard": "bin/graveyard.js",
     "graveyard": "bin/graveyard.js"
   },
   "files": [
     "bin",
-    "src"
+    "src",
+    "LICENSE",
+    "README.md"
   ],
   "engines": {
     "node": ">=18"
@@ -19,5 +22,15 @@
   "license": "MIT",
   "dependencies": {
     "three": "^0.187.0"
-  }
+  },
+  "keywords": [
+    "git",
+    "recovery",
+    "reflog",
+    "undo",
+    "reset",
+    "stash",
+    "ai-agent",
+    "kiro"
+  ]
 }

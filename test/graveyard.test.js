@@ -401,3 +401,30 @@ test('death time is when the reflog moved, not the commit date; filters pick big
   assert.equal(applyFilters(tombstones, { sort: 'biggest' })[0].title, 'big one');
   rmSync(d, { recursive: true, force: true });
 });
+
+test('ward hook reads Claude Code and Kiro payloads, always exits 0, and installs for Kiro', async () => {
+  const { commandOf, installKiroHook } = await import('../src/ward.js');
+  assert.equal(commandOf({ tool_input: { command: 'git reset --hard' } }), 'git reset --hard');
+  assert.equal(commandOf({ toolInput: { command: 'git clean -fd' } }), 'git clean -fd');
+  assert.equal(commandOf({ input: { cmd: 'git stash drop' } }), 'git stash drop');
+  assert.equal(commandOf({ arguments: 'git checkout .' }), 'git checkout .');
+  assert.equal(commandOf({}), null);
+
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  writeFileSync(join(d, 'a.txt'), 'wip\n');
+  const bin = new URL('../bin/graveyard.js', import.meta.url).pathname;
+  const run = (input, cwd = d) => execFileSync(process.execPath, [bin, 'ward', 'hook'], { cwd, input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+  run(JSON.stringify({ toolInput: { command: 'git reset --hard' } })); // throws if exit code is not 0
+  assert.equal(sh(d, 'for-each-ref', '--count=1', '--format=%(refname)', 'refs/graveyard').startsWith('refs/graveyard/ward/'), true);
+  run('not json at all');
+  run(JSON.stringify({ toolInput: { command: 'git reset --hard' } }), tmpdir()); // not a repo: still exit 0
+
+  const r = installKiroHook(d, 'node x ward hook');
+  const doc = JSON.parse(readFileSync(r.file, 'utf8'));
+  assert.equal(doc.version, 'v1');
+  assert.equal(doc.hooks[0].trigger, 'PreToolUse');
+  assert.equal(doc.hooks[0].action.command, 'node x ward hook');
+  assert.ok(new RegExp(doc.hooks[0].matcher).test('shell'));
+  rmSync(d, { recursive: true, force: true });
+});

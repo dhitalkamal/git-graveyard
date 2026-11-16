@@ -69,7 +69,17 @@ export function snapshot(cwd, reason = 'manual snapshot') {
   }
 }
 
-/** Claude Code PreToolUse hook: JSON on stdin. Never blocks the command; only snapshots first. */
+/** The shell command inside a PreToolUse payload. Claude Code, Kiro IDE and Kiro CLI name it differently. */
+export function commandOf(payload) {
+  const inputs = [payload?.tool_input, payload?.toolInput, payload?.input, payload?.arguments, payload?.args];
+  for (const i of inputs) {
+    if (typeof i === 'string') return i;
+    for (const k of ['command', 'cmd', 'script']) if (typeof i?.[k] === 'string') return i[k];
+  }
+  return null;
+}
+
+/** PreToolUse hook for Claude Code and Kiro: JSON on stdin. Never blocks the command; only snapshots first. */
 export function handleHook(stdin) {
   let payload;
   try {
@@ -77,10 +87,10 @@ export function handleHook(stdin) {
   } catch {
     return null;
   }
-  const command = payload?.tool_input?.command;
+  const command = commandOf(payload);
   if (!isDestructive(command)) return null;
   try {
-    return snapshot(payload.cwd || process.cwd(), command.slice(0, 120));
+    return snapshot(payload.cwd || payload.workspace || process.cwd(), command.slice(0, 120));
   } catch {
     return null; // a ward must never break the agent
   }
@@ -109,3 +119,32 @@ export function deleteWard(cwd, ref, sha) {
   git(top, args);
   return { ref };
 }
+
+/**
+ * Add the ward to <repo>/.kiro/hooks/graveyard-ward.json (Kiro IDE 1.0+ and Kiro CLI V3).
+ * Kiro blocks the tool when a PreToolUse command exits non-zero, and `ward hook` always exits 0.
+ */
+export function installKiroHook(cwd, hookCommand) {
+  const top = repoTop(cwd);
+  const file = join(top, '.kiro', 'hooks', 'graveyard-ward.json');
+  const doc = {
+    version: 'v1',
+    hooks: [
+      {
+        name: 'Graveyard ward',
+        description: 'Snapshot all work (even unstaged and untracked files) before a destructive git command. Never blocks the command.',
+        trigger: 'PreToolUse',
+        matcher: KIRO_SHELL_TOOLS,
+        action: { type: 'command', command: hookCommand },
+        timeout: 30,
+      },
+    ],
+  };
+  const existed = existsSync(file);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, JSON.stringify(doc, null, 2) + '\n');
+  return { file, added: !existed };
+}
+
+// Regex against the tool id: Kiro CLI calls its shell tool "shell", the IDE "executeBash".
+export const KIRO_SHELL_TOOLS = ['shell', 'executeBash', 'execute_bash'].join('|');
