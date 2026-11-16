@@ -54,7 +54,9 @@ export function snapshot(cwd, reason = 'manual snapshot') {
     const tree = git(top, ['write-tree'], { env }).trim();
     const headTree = head ? git(top, ['rev-parse', 'HEAD^{tree}']).trim() : null;
     if (tree === headTree) return null;
+    const branch = (tryGit(top, ['symbolic-ref', '-q', '--short', 'HEAD']) || '').trim();
     const args = ['commit-tree', tree, '-m', `ward: ${reason}`];
+    if (branch) args.push('-m', `on branch ${branch}`);
     if (head) args.push('-p', 'HEAD');
     const sha = git(top, args, { env }).trim();
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '');

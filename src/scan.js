@@ -2,6 +2,7 @@ import { statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { git, tryGit, lines, repoTop, hasHead, catBatch, existing } from './git.js';
 import { DAY, parseDuration } from './time.js';
+import { statOf } from './changes.js';
 
 const STASH_RE = /^(WIP on|On) .*?: |^index on .*?: |^untracked files on .*?: /;
 
@@ -34,12 +35,13 @@ function findLostCommits(top, reachable) {
     if (!byRef.has(m[1])) byRef.set(m[1], []);
     byRef.get(m[1]).push({ sha, idx: Number(m[2]), at: Number(ct) * 1000, subject: subj.join('\t') });
   }
-  for (const entries of byRef.values()) {
+  for (const [ref, entries] of byRef) {
     entries.sort((a, b) => a.idx - b.idx);
     entries.forEach((e, i) => {
       if (reachable.has(e.sha) || lost.has(e.sha)) return;
       const killer = i > 0 ? entries[i - 1] : null; // the newer entry moved the ref away
-      lost.set(e.sha, { killer: killer?.subject ?? null, killedAt: killer?.at ?? null, inReflog: true });
+      const origin = ref === 'HEAD' || ref.startsWith('refs/stash') || ref === 'stash' ? null : ref.replace(/^refs\/heads\//, '');
+      lost.set(e.sha, { killer: killer?.subject ?? null, killedAt: killer?.at ?? null, inReflog: true, origin });
     });
   }
 
@@ -96,28 +98,43 @@ function commitTombstones(top, lost, cfg, now) {
       }
       c = info.get(p);
     }
-    const files = lines(
-      tryGit(top, base ? ['diff', '--name-only', base, tip.sha] : ['show', '--name-only', '--format=', tip.sha]),
-    );
     const meta = lost.get(tip.sha);
     // `branch -D` leaves no reflog line. The HEAD line after the last commit says "checkout: moving from X",
     // so when X no longer exists, X was deleted.
     const moved = meta.killer?.match(/^checkout: moving from (\S+) to /);
     if (moved && tryGit(top, ['rev-parse', '--verify', '-q', `refs/heads/${moved[1]}`]) === null) {
       meta.killer = `branch ${moved[1]} deleted`;
+      meta.origin = moved[1];
     }
+    // a lost commit found only through HEAD's reflog: the line that left it says which branch it was on
+    if (!meta.origin && moved) meta.origin = moved[1];
     const isStash = STASH_RE.test(tip.subject) && tip.parents.length >= 2;
     const died = meta.killedAt ?? tip.at;
     const span = meta.inReflog ? cfg.reflogMs : cfg.pruneMs;
     const deadline = died + span;
+    let origin = meta.origin;
+    let headline = tip.subject;
+    if (isStash) {
+      // "WIP on main: abc123 subject" is git's own text; "On main: my message" is the user's
+      const m = tip.subject.match(/^(WIP on|On) ([^:]+): (.*)$/);
+      if (m) {
+        origin = m[2];
+        headline = m[1] === 'On' ? m[3] : `Uncommitted changes on ${m[2]}`;
+      }
+    }
     return {
       id: `${isStash ? 's' : 'c'}:${tip.sha.slice(0, 7)}`,
       kind: isStash ? 'stash' : 'commit',
       sha: tip.sha,
+      base,
+      parents: tip.parents,
       title: tip.subject,
+      headline,
+      origin,
       author: tip.author,
       commits: isStash ? 1 : seen.size,
-      files,
+      firstAt: Math.min(...[...seen].map((s) => info.get(s).at)),
+      lastAt: tip.at,
       died,
       killer: meta.killer ?? (isStash ? 'stash dropped or cleared' : null),
       deadline,
@@ -206,7 +223,10 @@ function ghostTombstones(top, blobs, tombs, cfg, now) {
       kind: 'ghost',
       sha: g.sha,
       title: first || '(blank)',
+      headline: guess ? `Lost version of ${guess.path}` : 'Nameless file',
       size: g.size,
+      binary,
+      lineCount: buf && !binary ? buf.toString('utf8').replace(/\n$/, '').split('\n').length : 0,
       guess,
       died,
       killer: null,
@@ -217,10 +237,15 @@ function ghostTombstones(top, blobs, tombs, cfg, now) {
 }
 
 function wardTombstones(top) {
-  const out = tryGit(top, ['for-each-ref', 'refs/graveyard/ward', '--format=%(objectname)%09%(refname)%09%(creatordate:unix)%09%(contents:subject)']);
-  return lines(out).map((l) => {
-    const [sha, ref, ct, subject] = l.split('\t');
+  const fmt = ['objectname', 'refname', 'creatordate:unix', 'contents:subject', 'contents:body', 'parent'].map((f) => `%(${f})`).join('%1f') + '%1e';
+  const out = tryGit(top, ['for-each-ref', 'refs/graveyard/ward', `--format=${fmt}`]) || '';
+  return out.split('\x1e').map((r) => r.replace(/^\n/, '')).filter(Boolean).map((r) => {
+    const [sha, ref, ct, subject, body = '', parent = ''] = r.split('\x1f');
+    const on = body.match(/on branch (\S+)/);
     return {
+      parents: parent ? parent.split(' ') : [],
+      headline: 'Snapshot before ' + subject.replace(/^ward: /, ''),
+      origin: on ? on[1] : null,
       id: `w:${ref.split('/').pop()}`,
       kind: 'ward',
       sha,
@@ -243,5 +268,21 @@ export function scan(cwd, { now = Date.now(), ghosts = true } = {}) {
   const wards = wardTombstones(top);
   const ghostList = ghosts ? ghostTombstones(top, blobs, commits, cfg, now) : [];
   const all = [...commits, ...ghostList, ...wards].sort((a, b) => b.died - a.died);
+  for (const t of all) {
+    t.stat = statOf(top, t);
+    t.files = t.stat.files.map((f) => f.path);
+    t.summary = summarize(t);
+  }
   return { top, cfg, tombstones: all };
+}
+
+function summarize(t) {
+  const parts = [];
+  if (t.kind === 'commit') parts.push(`${t.commits} commit${t.commits > 1 ? 's' : ''}`);
+  if (t.origin) parts.push(`on ${t.origin}`);
+  const n = t.stat.files.length;
+  if (t.kind !== 'ghost') parts.push(`${n} file${n === 1 ? '' : 's'}`);
+  else if (t.guess) parts.push(`${t.guess.score}% match`);
+  parts.push(`+${t.stat.added} -${t.stat.removed}`);
+  return parts.join(', ');
 }

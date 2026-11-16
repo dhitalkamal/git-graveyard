@@ -9,11 +9,13 @@ import { renderTomb, bold, dim } from '../src/format.js';
 import { startServer } from '../src/server.js';
 import { installShim, uninstallShim, wardCheck, defaultShimDir } from '../src/shim.js';
 import { repoTop } from '../src/git.js';
+import { detailOf } from '../src/changes.js';
 
 const HELP = `graveyard: raise the work git lost
 
   graveyard [scan] [--json] [--no-ghosts]   list lost commits, stashes, ghosts and ward snapshots
   graveyard ui [--port N]                   open the cemetery in your browser (127.0.0.1 only)
+  graveyard show <id>                       print what a tombstone holds: commits and the full diff
   graveyard revive <id>                     bring one back on a new branch (touches nothing you have)
   graveyard ward snapshot [reason]          save all work now (staged, unstaged, untracked)
   graveyard ward run -- <command...>        snapshot first if the command is destructive, then run it
@@ -55,6 +57,28 @@ try {
     const { url } = await startServer(repoTop(process.cwd()), { port });
     console.log(`The cemetery is open at ${url}  (Ctrl+C to close)`);
     if (!flags.has('--no-open') && process.platform === 'darwin') spawnSync('open', [url]);
+  } else if (cmd === 'show') {
+    if (!args[0]) throw new Error('usage: graveyard show <id>');
+    const { top, tombstones } = scan(process.cwd());
+    const q = args[0].replace(/^[a-z]:/, '');
+    const hits = tombstones.filter((t) => t.id === args[0] || t.sha.startsWith(q));
+    if (hits.length !== 1) throw new Error(hits.length ? `"${args[0]}" matches ${hits.length} tombstones` : `no tombstone matches "${args[0]}"`);
+    const t = hits[0];
+    const d = detailOf(top, t);
+    const out = [renderTomb(t), ''];
+    for (const c of d.commits) out.push(`  ${c.sha}  ${c.subject}`);
+    if (d.commits.length) out.push('');
+    const tty = process.stdout.isTTY && !process.env.NO_COLOR;
+    for (const l of d.patch.split('\n')) {
+      if (!tty) out.push(l);
+      else if (l.startsWith('+') && !l.startsWith('+++')) out.push(`\x1b[32m${l}\x1b[0m`);
+      else if (l.startsWith('-') && !l.startsWith('---')) out.push(`\x1b[31m${l}\x1b[0m`);
+      else if (l.startsWith('@@')) out.push(`\x1b[36m${l}\x1b[0m`);
+      else if (l.startsWith('diff --git') || l.startsWith('# ')) out.push(bold(l));
+      else out.push(l);
+    }
+    if (d.truncated) out.push(dim('(diff cut short; raise it and use git for the rest)'));
+    console.log(out.join('\n'));
   } else if (cmd === 'revive') {
     if (!args[0]) throw new Error('usage: graveyard revive <id>');
     const r = revive(process.cwd(), args[0]);

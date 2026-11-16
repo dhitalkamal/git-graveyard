@@ -6,6 +6,7 @@ import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scan } from './scan.js';
 import { revive } from './revive.js';
+import { detailOf } from './changes.js';
 
 const PAGE = readFileSync(fileURLToPath(new URL('./ui.html', import.meta.url)), 'utf8');
 const THREE_ROOT = dirname(dirname(createRequire(import.meta.url).resolve('three')));
@@ -34,6 +35,8 @@ const json = (res, code, body) => {
 export function startServer(repo, { port = 4747 } = {}) {
   const token = randomBytes(16).toString('hex');
   let actualPort = port;
+  // last scan, by id; detail and revive look tombstones up here so a raised one stays inspectable
+  const known = new Map();
 
   const server = createServer((req, res) => {
     // block DNS-rebinding: only accept our own loopback host names
@@ -58,7 +61,13 @@ export function startServer(repo, { port = 4747 } = {}) {
       }
       if (req.method === 'GET' && url.pathname === '/api/tombs') {
         const r = scan(repo);
+        for (const t of r.tombstones) known.set(t.id, t);
         return json(res, 200, { repo: r.top, now: Date.now(), tombstones: r.tombstones });
+      }
+      if (req.method === 'GET' && url.pathname === '/api/detail') {
+        const t = known.get(url.searchParams.get('id') || '');
+        if (!t) return json(res, 404, { error: 'unknown tombstone; reload the page' });
+        return json(res, 200, detailOf(repo, t));
       }
       if (req.method === 'POST' && url.pathname === '/api/revive') {
         if (req.headers['x-graveyard-token'] !== token) return json(res, 403, { error: 'bad token' });

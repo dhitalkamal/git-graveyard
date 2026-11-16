@@ -267,3 +267,80 @@ test('vendor route serves three.js and blocks traversal', async () => {
     rmSync(d, { recursive: true, force: true });
   }
 });
+
+test('tombstones carry headline, origin, stats and a diff', async () => {
+  const { detailOf } = await import('../src/changes.js');
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  sh(d, 'switch', '-qc', 'feature');
+  commit(d, 'b.txt', 'one\ntwo\n', 'add b');
+  commit(d, 'a.txt', '1\nmore\n', 'grow a');
+  sh(d, 'switch', '-q', 'main');
+  sh(d, 'branch', '-D', 'feature');
+  writeFileSync(join(d, 'a.txt'), 'dirty\n');
+  sh(d, 'stash', 'push', '-q', '-m', 'my experiment');
+  sh(d, 'stash', 'drop', '-q');
+  writeFileSync(join(d, 'u.txt'), 'untracked\n');
+  const snap = snapshot(d, 'git clean -fd');
+
+  const { top, tombstones } = scan(d);
+  const c = tombstones.find((t) => t.kind === 'commit');
+  assert.equal(c.origin, 'feature');
+  assert.deepEqual(c.stat, {
+    added: 3, removed: 0,
+    files: [{ path: 'a.txt', added: 1, removed: 0, binary: false }, { path: 'b.txt', added: 2, removed: 0, binary: false }],
+  });
+  assert.match(c.summary, /2 commits, on feature, 2 files, \+3 -0/);
+  const cd = detailOf(top, c);
+  assert.deepEqual(cd.commits.map((x) => x.subject), ['grow a', 'add b']);
+  assert.match(cd.patch, /\+more/);
+
+  const s = tombstones.find((t) => t.kind === 'stash');
+  assert.equal(s.headline, 'my experiment');
+  assert.equal(s.origin, 'main');
+  assert.match(detailOf(top, s).patch, /-1\n\+dirty/);
+
+  const w = tombstones.find((t) => t.kind === 'ward');
+  assert.equal(w.headline, 'Snapshot before git clean -fd');
+  assert.equal(w.origin, 'main');
+  assert.deepEqual(w.files, ['u.txt']);
+  assert.match(detailOf(top, w).patch, /\+untracked/);
+  assert.ok(snap);
+  rmSync(d, { recursive: true, force: true });
+});
+
+test('ghost detail diffs against the guessed file', async () => {
+  const { detailOf } = await import('../src/changes.js');
+  const d = repo();
+  commit(d, 'notes.md', BIG, 'base');
+  writeFileSync(join(d, 'notes.md'), BIG + 'only staged once\n');
+  sh(d, 'add', 'notes.md');
+  sh(d, 'checkout', 'HEAD', '--', 'notes.md');
+  const { top, tombstones } = scan(d);
+  const g = tombstones.find((t) => t.kind === 'ghost');
+  assert.equal(g.headline, 'Lost version of notes.md');
+  assert.equal(g.stat.added, 1);
+  const p = detailOf(top, g).patch;
+  assert.match(p, /^diff --git a\/notes.md b\/notes.md/m);
+  assert.match(p, /\+only staged once/);
+  rmSync(d, { recursive: true, force: true });
+});
+
+test('detail endpoint answers for known ids only', async () => {
+  const { startServer } = await import('../src/server.js');
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  commit(d, 'a.txt', '2\n', 'lost');
+  sh(d, 'reset', '-q', '--hard', 'HEAD~1');
+  const { server, url } = await startServer(d, { port: 0 });
+  try {
+    assert.equal((await fetch(url + 'api/detail?id=c:0000000')).status, 404);
+    const { tombstones } = await (await fetch(url + 'api/tombs')).json();
+    const r = await fetch(url + 'api/detail?id=' + encodeURIComponent(tombstones[0].id));
+    assert.equal(r.status, 200);
+    assert.match((await r.json()).patch, /\+2/);
+  } finally {
+    server.close();
+    rmSync(d, { recursive: true, force: true });
+  }
+});

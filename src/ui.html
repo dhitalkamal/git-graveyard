@@ -20,18 +20,50 @@
   .hint { position:fixed; left:24px; bottom:18px; color:var(--dim); display:flex; gap:12px; align-items:center; }
   .legend { position:fixed; left:24px; bottom:52px; display:flex; gap:14px; color:var(--dim); font-size:12px; }
   .legend i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
-  .tip { position:fixed; pointer-events:none; background:rgba(10,14,20,.9); border:1px solid #2b3442; border-radius:6px; padding:4px 9px; font-size:12px; transform:translate(12px, 12px); max-width:300px; }
-  .panel { position:fixed; right:18px; top:78px; bottom:18px; width:min(340px, 90vw); background:rgba(14,19,27,.88); border:1px solid #263041; border-radius:12px; padding:18px; overflow:auto; backdrop-filter:blur(8px); transform:translateX(120%); transition:transform .25s ease; }
+  .panel { position:fixed; right:18px; top:78px; bottom:18px; width:min(420px, 92vw); background:rgba(12,16,23,.93); border:1px solid #263041; border-radius:12px; display:flex; flex-direction:column; backdrop-filter:blur(8px); transform:translateX(120%); transition:transform .25s ease, width .25s ease; }
   .panel.open { transform:none; }
-  .panel h2 { margin:0 0 8px; font-size:15px; word-break:break-word; padding-right:20px; }
-  .pill { display:inline-block; font-size:11px; padding:1px 9px; border-radius:999px; border:1px solid currentColor; margin-bottom:10px; }
+  .panel.wide { width:min(920px, 72vw); }
+  .ph { padding:16px 18px 0; position:relative; }
+  .kind { font-size:11px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase; }
+  .panel h2 { margin:4px 0 8px; font-size:16px; word-break:break-word; padding-right:24px; }
+  .pill { display:inline-block; font-size:11px; padding:1px 9px; border-radius:999px; border:1px solid currentColor; margin:0 6px 6px 0; }
   .fresh{color:var(--fresh)} .weathered{color:var(--weathered)} .crumbling{color:var(--crumbling)} .overdue{color:var(--overdue)} .safe{color:var(--safe)}
-  .row { color:var(--dim); margin:3px 0; word-break:break-word; } .row b { color:var(--fg); font-weight:400; }
-  .files { margin:10px 0 0; padding:0; list-style:none; color:var(--dim); font-size:12px; }
   .close { position:absolute; right:12px; top:10px; background:none; border:0; color:var(--dim); font:inherit; cursor:pointer; font-size:16px; }
-  button.raise { margin-top:16px; width:100%; background:#22303f; color:var(--fg); border:1px solid #3a4b60; border-radius:8px; padding:10px; cursor:pointer; font:inherit; }
+  .ptabs { display:flex; gap:4px; margin-top:8px; border-bottom:1px solid #263041; }
+  .ptabs button { background:none; border:0; border-bottom:2px solid transparent; color:var(--dim); padding:8px 10px; font:inherit; cursor:pointer; }
+  .ptabs button.on { color:var(--fg); border-bottom-color:#8fa0b8; }
+  .pb { flex:1; overflow:auto; padding:12px 18px; }
+  .pf { padding:12px 18px 16px; border-top:1px solid #263041; }
+  .facts { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:0; }
+  .facts dt { color:var(--dim); } .facts dd { margin:0; word-break:break-word; }
+  h3 { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); margin:18px 0 6px; font-weight:400; }
+  .clist { list-style:none; margin:0; padding:0; }
+  .clist li { display:flex; gap:8px; padding:3px 0; } .clist code { color:#e5c07b; flex:none; }
+  .clist .when { color:var(--dim); margin-left:auto; flex:none; }
+  .flist { list-style:none; margin:0; padding:0; }
+  .flist li { display:grid; grid-template-columns:1fr auto 60px; gap:8px; align-items:center; padding:3px 4px; border-radius:4px; cursor:pointer; }
+  .flist li:hover { background:#1a222d; }
+  .flist .p { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
+  .flist .n { font-size:12px; } .add { color:#7ee2a0; } .del { color:#f08a93; }
+  .bar { height:6px; border-radius:3px; background:#263041; overflow:hidden; display:flex; }
+  .bar i { display:block; height:100%; } .bar .a { background:#4fbf7a; } .bar .d { background:#d9606b; }
+  .note { color:var(--dim); font-size:12px; margin-top:8px; }
+  .diff { font-size:12px; }
+  .diff details { border:1px solid #263041; border-radius:8px; margin-bottom:10px; overflow:hidden; }
+  .diff summary { cursor:pointer; padding:7px 10px; background:#151c26; display:flex; gap:10px; list-style:none; }
+  .diff summary::-webkit-details-marker { display:none; }
+  .diff summary .p { flex:1; word-break:break-all; }
+  .diff pre { margin:0; padding:4px 0; overflow:auto; background:#0b0f15; }
+  .diff pre div { padding:0 10px; white-space:pre; min-height:1.45em; }
+  .diff .l-add { background:rgba(79,191,122,.13); color:#b9f0cb; } .diff .l-del { background:rgba(217,96,107,.14); color:#f6c1c6; }
+  .diff .l-hunk { color:#79a8d9; background:#101823; } .diff .l-meta { color:var(--dim); }
+  button.raise { width:100%; background:#22303f; color:var(--fg); border:1px solid #3a4b60; border-radius:8px; padding:10px; cursor:pointer; font:inherit; }
   button.raise:hover { background:#2a3b4e; } button.raise:disabled { opacity:.5; cursor:default; }
-  .done { margin-top:12px; color:var(--fresh); word-break:break-all; } .err { margin-top:12px; color:var(--crumbling); }
+  .done { margin-top:10px; color:var(--fresh); word-break:break-all; } .err { margin-top:10px; color:var(--crumbling); }
+  .tip { position:fixed; pointer-events:none; background:rgba(10,14,20,.94); border:1px solid #2b3442; border-radius:8px; padding:8px 11px; font-size:12px; transform:translate(14px, 14px); max-width:340px; }
+  .tip .k { font-size:10px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase; }
+  .tip b { display:block; margin:2px 0 4px; } .tip .s { color:var(--dim); } .tip ul { margin:6px 0 0; padding:0; list-style:none; }
+  .tip li { display:flex; gap:8px; } .tip li span:first-child { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .center { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dim); pointer-events:none; text-align:center; padding:20px; }
   @media (prefers-reduced-motion: reduce) { .panel { transition:none; } }
 </style>
@@ -74,6 +106,12 @@ const rnd = (seed, n) => ((hash(seed + ':' + n) % 2000) / 1000) - 1;
 
 let data = null, tab = 'all', selected = null;
 
+function kindName(t) {
+  if (t.kind === 'commit') return /^branch .* deleted$/.test(t.killer || '') ? 'deleted branch' : t.commits > 1 ? 'lost commits' : 'lost commit';
+  return { stash:'dropped stash', ghost:'ghost file', ward:'ward snapshot' }[t.kind];
+}
+const fileCount = (t) => t.stat.files.length + ' file' + (t.stat.files.length === 1 ? '' : 's');
+
 function ago(ms) {
   const d = Math.max(0, data.now - ms);
   if (d < 6e4) return 'just now';
@@ -100,7 +138,7 @@ try {
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.45;
 
@@ -286,26 +324,32 @@ function faceTexture(t) {
   const W = 320, H = 440;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
-  const ink = t.kind === 'ward' ? 'rgba(10,30,34,0.85)' : 'rgba(18,22,28,0.82)';
-  const hi = 'rgba(255,255,255,0.18)';
+  const ink = t.kind === 'ward' ? 'rgba(8,28,32,0.9)' : 'rgba(16,20,26,0.88)';
+  const hi = 'rgba(255,255,255,0.2)';
   const carve = (fn) => { x.save(); x.translate(0, 2); x.fillStyle = hi; x.strokeStyle = hi; fn(); x.restore(); x.fillStyle = ink; x.strokeStyle = ink; fn(); };
-  x.lineCap = 'round'; x.lineJoin = 'round';
+  x.lineCap = 'round'; x.lineJoin = 'round'; x.textAlign = 'center';
+  const F = (w, px) => w + ' ' + px + 'px ui-monospace, Menlo, monospace';
 
   carve(() => {
-    x.lineWidth = 9;
+    x.lineWidth = 7;
     x.beginPath();
-    if (t.kind === 'stash') { x.strokeRect(118, 60, 84, 66); x.moveTo(118, 88); x.lineTo(202, 88); }
-    else if (t.kind === 'ward') { x.moveTo(160, 48); x.lineTo(212, 66); x.lineTo(212, 102); x.quadraticCurveTo(212, 136, 160, 156); x.quadraticCurveTo(108, 136, 108, 102); x.lineTo(108, 66); x.closePath(); x.moveTo(136, 102); x.lineTo(154, 120); x.lineTo(186, 86); }
-    else { x.moveTo(160, 46); x.lineTo(160, 150); x.moveTo(124, 80); x.lineTo(196, 80); }
+    if (t.kind === 'stash') { x.strokeRect(131, 40, 58, 46); x.moveTo(131, 60); x.lineTo(189, 60); }
+    else if (t.kind === 'ward') { x.moveTo(160, 34); x.lineTo(196, 47); x.lineTo(196, 72); x.quadraticCurveTo(196, 96, 160, 110); x.quadraticCurveTo(124, 96, 124, 72); x.lineTo(124, 47); x.closePath(); x.moveTo(142, 72); x.lineTo(155, 85); x.lineTo(178, 60); }
+    else { x.moveTo(160, 32); x.lineTo(160, 104); x.moveTo(134, 56); x.lineTo(186, 56); }
     x.stroke();
   });
   carve(() => {
-    x.font = 'bold 30px ui-monospace, Menlo, monospace'; x.textAlign = 'center';
-    wrap(x, t.title, 260, 3).forEach((l, i) => x.fillText(l, 160, 214 + i * 38));
-    x.font = '22px ui-monospace, Menlo, monospace';
-    x.fillText(t.kind === 'ward' ? 'saved ' + ago(t.died) : 'died ' + ago(t.died), 160, 350);
-    x.font = 'bold 24px ui-monospace, Menlo, monospace';
-    x.fillText(t.kind === 'ward' ? 'safe' : left(t), 160, 390);
+    x.font = F('bold', 17); x.fillText(kindName(t).toUpperCase(), 160, 140);
+    x.font = F('bold', 27);
+    wrap(x, t.headline || t.title, 270, 3).forEach((l, i) => x.fillText(l, 160, 184 + i * 33));
+    x.font = F('bold', 22);
+    x.fillText('+' + t.stat.added + '  -' + t.stat.removed + '  ' + fileCount(t), 160, 300);
+    x.font = F('', 19);
+    const first = t.stat.files[0]?.path;
+    if (first) x.fillText(first.length > 26 ? '..' + first.slice(-24) : first, 160, 328);
+    if (t.origin) x.fillText('on ' + (t.origin.length > 22 ? t.origin.slice(0, 21) + '..' : t.origin), 160, 354);
+    x.font = F('bold', 21);
+    x.fillText(t.kind === 'ward' ? 'saved ' + ago(t.died) : left(t), 160, 395);
   });
   const n = CRACKS[t.health] || 0;
   const cracks = [[[40, 440], [70, 360], [44, 300], [60, 250]], [[300, 200], [250, 250], [290, 320], [270, 380]], [[130, 0], [160, 60], [140, 110]], [[220, 440], [205, 380], [235, 330]], [[0, 230], [60, 250], [50, 290]]];
@@ -318,14 +362,18 @@ function faceTexture(t) {
 }
 
 function labelSprite(text, color = '#e8f0ff') {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 96;
-  const x = c.getContext('2d');
-  x.font = 'bold 40px ui-monospace, Menlo, monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const font = 'bold 40px ui-monospace, Menlo, monospace';
+  const label = text.length > 40 ? text.slice(0, 39) + '..' : text;
+  const c = document.createElement('canvas');
+  let x = c.getContext('2d'); x.font = font;
+  c.width = Math.ceil(x.measureText(label).width) + 40; c.height = 96;
+  x = c.getContext('2d');
+  x.font = font; x.textAlign = 'center'; x.textBaseline = 'middle';
   x.shadowColor = 'rgba(0,0,0,0.9)'; x.shadowBlur = 10; x.fillStyle = color;
-  x.fillText(text.length > 22 ? text.slice(0, 21) + '..' : text, 256, 48);
+  x.fillText(label, c.width / 2, 48);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthWrite:false }));
-  s.scale.set(2.4, 0.45, 1);
+  s.scale.set(0.45 * c.width / 96, 0.45, 1);
   return s;
 }
 
@@ -404,12 +452,12 @@ function makeGhost(t, withLight) {
   fig.add(body, e1, e2, mouth);
   fig.position.y = 0.35;
   g.add(fig);
-  const label = labelSprite(t.guess ? t.guess.path : 'nameless', t.guess ? '#e8f0ff' : '#9aa6b6');
+  const label = labelSprite((t.guess ? t.guess.path : 'nameless') + '  +' + t.stat.added + ' -' + t.stat.removed, t.guess ? '#e8f0ff' : '#9aa6b6');
   label.position.y = 2.05; g.add(label);
   if (withLight) { const l = new THREE.PointLight(0x9fb8ff, 1.2, 3.5, 2); l.position.y = 1.1; g.add(l); }
   const glow = new THREE.Mesh(new THREE.CircleGeometry(0.9, 32), new THREE.MeshBasicMaterial({ map:glowTexture('rgba(255,255,255,0.9)'), color:0x9fb8ff, transparent:true, opacity:0.35, depthWrite:false, blending:THREE.AdditiveBlending }));
   glow.rotation.x = -Math.PI / 2; glow.position.y = 0.02; g.add(glow);
-  g.userData = { tomb:t, body:fig, glow, mats:[mat], baseY:fig.position.y, ghost:true, phase:rnd(t.id, 'p') * 3 };
+  g.userData = { tomb:t, body:fig, glow, mats:[mat], baseY:fig.position.y, ghost:true, phase:rnd(t.id, 'p') * 3, label };
   return g;
 }
 
@@ -451,7 +499,7 @@ function frame(radius) {
   home.pos.set(d * 0.3, d * 0.36, d * 0.95);
   camera.position.copy(home.pos); controls.target.copy(home.target); controls.update();
 }
-$('reset').onclick = () => { camera.position.copy(home.pos); controls.target.copy(home.target); controls.update(); };
+$('reset').onclick = () => { focus = null; camera.position.copy(home.pos); controls.target.copy(home.target); controls.update(); };
 
 /* ---------- picking ---------- */
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
@@ -468,8 +516,11 @@ canvas.addEventListener('pointermove', (e) => {
   const o = pick(e);
   if (o !== hovered) { hovered = o; canvas.style.cursor = o ? 'pointer' : ''; }
   const tip = $('tip');
-  if (o) { tip.hidden = false; tip.textContent = o.userData.tomb.title; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
-  else tip.hidden = true;
+  if (o) {
+    if (tip.dataset.id !== o.userData.tomb.id) { tip.replaceChildren(...hoverCard(o.userData.tomb)); tip.dataset.id = o.userData.tomb.id; }
+    tip.hidden = false;
+    tip.style.left = Math.min(e.clientX, innerWidth - 360) + 'px'; tip.style.top = Math.min(e.clientY, innerHeight - 160) + 'px';
+  } else tip.hidden = true;
 });
 canvas.addEventListener('pointerleave', () => { $('tip').hidden = true; hovered = null; });
 canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
@@ -479,48 +530,152 @@ canvas.addEventListener('pointerup', (e) => {
   if (o) openPanel(o.userData.tomb);
 });
 
+function hoverCard(t) {
+  const ul = el('ul');
+  for (const f of t.stat.files.slice(0, 4)) ul.append(el('li', {}, el('span', { textContent:f.path }), el('span', { className:'add', textContent:'+' + f.added }), el('span', { className:'del', textContent:'-' + f.removed })));
+  if (t.stat.files.length > 4) ul.append(el('li', { className:'s', textContent:'+ ' + (t.stat.files.length - 4) + ' more files' }));
+  return [el('div', { className:'k', textContent:kindName(t) + ' | ' + (t.kind === 'ward' ? 'safe' : left(t)) }), el('b', { textContent:t.headline || t.title }), el('div', { className:'s', textContent:t.summary }), ul];
+}
+
 /* ---------- side panel ---------- */
-function closePanel() { $('panel').classList.remove('open'); selected = null; }
+function closePanel() { $('panel').classList.remove('open', 'wide'); selected = null; }
+const details = new Map();
+async function getDetail(t) {
+  if (!details.has(t.id)) details.set(t.id, fetch('/api/detail?id=' + encodeURIComponent(t.id)).then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error); return j; }));
+  return details.get(t.id);
+}
+
+function bar(f, max) {
+  const b = el('div', { className:'bar' });
+  const w = (n) => Math.max(n ? 4 : 0, Math.round((n / max) * 60));
+  b.append(el('i', { className:'a', style:'width:' + w(f.added) + 'px' }), el('i', { className:'d', style:'width:' + w(f.removed) + 'px' }));
+  return b;
+}
+
+function overview(t, d, goFile) {
+  const box = el('div');
+  const dl = el('dl', { className:'facts' });
+  const fact = (k, v) => { if (v) dl.append(el('dt', { textContent:k }), el('dd', { textContent:v })); };
+  fact('what', { commit:'Commits no branch points at any more.', stash:'Changes you stashed, then dropped.', ghost:'A file version git kept, but with no name.', ward:'A copy of all your work, saved before a risky git command.' }[t.kind]);
+  fact('from', t.origin && 'branch ' + t.origin);
+  fact('killed by', t.killer);
+  fact(t.kind === 'ward' ? 'saved' : 'died', ago(t.died) + ' (' + new Date(t.died).toLocaleString() + ')');
+  fact('expires', t.kind === 'ward' ? 'never, until you delete the ward' : left(t));
+  if (t.kind === 'commit') fact('written', t.firstAt === t.lastAt ? ago(t.lastAt) : ago(t.firstAt) + ' to ' + ago(t.lastAt));
+  fact('author', t.author);
+  if (t.kind === 'ghost') fact('seance', t.guess ? 'looks like ' + t.guess.path + ' (' + t.guess.score + '% of lines match)' : 'no match in your files');
+  if (t.kind === 'ghost') fact('size', t.size + ' bytes' + (t.lineCount ? ', ' + t.lineCount + ' lines' : ''));
+  fact('change', '+' + t.stat.added + ' -' + t.stat.removed + ' in ' + fileCount(t));
+  fact('id', t.id + '  ' + t.sha.slice(0, 12));
+  box.append(dl);
+
+  if (d.commits.length) {
+    box.append(el('h3', { textContent:'commits (' + t.commits + ')' }));
+    const ul = el('ul', { className:'clist' });
+    for (const c of d.commits) ul.append(el('li', {}, el('code', { textContent:c.sha }), el('span', { textContent:c.subject }), el('span', { className:'when', textContent:ago(c.at) })));
+    box.append(ul);
+  }
+  if (t.stat.files.length) {
+    box.append(el('h3', { textContent:t.kind === 'ghost' ? 'compared with your file' : 'files' }));
+    const max = Math.max(1, ...t.stat.files.map((f) => f.added + f.removed));
+    const ul = el('ul', { className:'flist' });
+    t.stat.files.forEach((f, i) => {
+      const li = el('li', { title:'show changes' }, el('span', { className:'p', textContent:f.path + (f.note ? ' (' + f.note + ')' : '') }),
+        el('span', { className:'n' }, el('span', { className:'add', textContent:f.binary ? 'bin' : '+' + f.added }), ' ', el('span', { className:'del', textContent:f.binary ? '' : '-' + f.removed })), bar(f, max));
+      li.onclick = () => goFile(i);
+      ul.append(li);
+    });
+    box.append(ul);
+  }
+  return box;
+}
+
+function parsePatch(patch) {
+  const files = []; let cur = null;
+  for (const line of patch.split('\n')) {
+    if (line.startsWith('diff --git ') || line.startsWith('# ')) {
+      if (line.startsWith('# ')) { files.push({ name:line.slice(2), lines:[], note:true }); cur = null; continue; }
+      const m = line.match(/^diff --git a\/(.*) b\/(.*)$/);
+      cur = { name:m ? (m[1] === m[2] ? m[2] : m[1] + ' -> ' + m[2]) : line, lines:[], add:0, del:0 };
+      files.push(cur); continue;
+    }
+    if (!cur) continue;
+    if (/^(index |--- |\+\+\+ |new file|deleted file|similarity|rename |old mode|new mode)/.test(line)) { if (/^(new file|deleted file|rename )/.test(line)) cur.lines.push(['meta', line]); continue; }
+    if (line.startsWith('@@')) cur.lines.push(['hunk', line]);
+    else if (line.startsWith('+')) { cur.lines.push(['add', line]); cur.add++; }
+    else if (line.startsWith('-')) { cur.lines.push(['del', line]); cur.del++; }
+    else if (line.startsWith('Binary') || line.startsWith('\\')) cur.lines.push(['meta', line]);
+    else cur.lines.push(['ctx', line]);
+  }
+  return files;
+}
+
+function changesView(t, d) {
+  const box = el('div', { className:'diff' });
+  if (!d.patch.trim()) { box.append(el('div', { className:'note', textContent:'No line changes. This one holds the same content as where it started.' })); return box; }
+  if (t.kind === 'ghost' && t.guess) box.append(el('div', { className:'note', textContent:'Red is your current ' + t.guess.path + '. Green is the lost version.' }));
+  if (t.kind === 'ward') box.append(el('div', { className:'note', textContent:'Everything that differed from your last commit when the ward fired, including files never staged.' }));
+  for (const f of parsePatch(d.patch)) {
+    if (f.note) { box.append(el('h3', { textContent:f.name })); continue; }
+    const det = el('details', { open:true });
+    det.append(el('summary', {}, el('span', { className:'p', textContent:f.name }), el('span', { className:'add', textContent:'+' + f.add }), el('span', { className:'del', textContent:'-' + f.del })));
+    const pre = el('pre');
+    for (const [k, l] of f.lines.slice(0, 3000)) pre.append(el('div', { className:'l-' + k, textContent:l }));
+    if (f.lines.length > 3000) pre.append(el('div', { className:'l-meta', textContent:'... ' + (f.lines.length - 3000) + ' more lines' }));
+    det.append(pre);
+    box.append(det);
+  }
+  if (d.truncated) box.append(el('div', { className:'note', textContent:'Diff cut short: it is very large. Raise it and use git to see the rest.' }));
+  return box;
+}
+
 function openPanel(t) {
   selected = t.id;
+  const o = pickables.find((x) => x.userData.tomb.id === t.id);
+  if (o) focusOn(o.position);
   const p = $('panel');
-  const row = (k, v) => el('div', { className:'row' }, k + ' ', el('b', { textContent:v }));
-  const close = el('button', { className:'close', textContent:'x', title:'close' });
+  const close = el('button', { className:'close', textContent:'x', title:'close (Esc)' });
   close.onclick = closePanel;
-  const kids = [close, el('h2', { textContent:t.title }),
-    el('span', { className:'pill ' + t.health, textContent: t.kind === 'ward' ? 'safe snapshot' : t.health + ', ' + left(t) })];
-  kids.push(row('kind', LABEL[t.kind].replace(/s$/, '')));
-  kids.push(row(t.kind === 'ward' ? 'saved' : 'died', ago(t.died)));
-  if (t.killer) kids.push(row('killed by', t.killer));
-  if (t.kind === 'commit' && t.commits > 1) kids.push(row('size', t.commits + ' commits'));
-  if (t.author) kids.push(row('author', t.author));
-  if (t.kind === 'ghost') {
-    kids.push(row('size', t.size + ' bytes'));
-    kids.push(row('seance', t.guess ? 'looks like ' + t.guess.path + ' (' + t.guess.score + '%)' : 'nameless'));
-  }
-  kids.push(row('id', t.id));
-  if (t.files && t.files.length) {
-    const ul = el('ul', { className:'files' });
-    for (const f of t.files.slice(0, 10)) ul.append(el('li', { textContent:f }));
-    if (t.files.length > 10) ul.append(el('li', { textContent:'+ ' + (t.files.length - 10) + ' more' }));
-    kids.push(ul);
-  }
+  const head = el('div', { className:'ph' }, close, el('div', { className:'kind', textContent:kindName(t) }), el('h2', { textContent:t.headline || t.title }),
+    el('span', { className:'pill ' + t.health, textContent: t.kind === 'ward' ? 'safe snapshot' : t.health + ', ' + left(t) }),
+    el('span', { className:'pill', style:'color:var(--dim)', textContent:t.summary }));
+  const tabsEl = el('div', { className:'ptabs' });
+  const body = el('div', { className:'pb', textContent:'reading the grave...' });
+  head.append(tabsEl);
+
+  let view = 'overview', detail = null;
+  const show = (v, fileIndex) => {
+    view = v;
+    p.classList.toggle('wide', v === 'changes');
+    tabsEl.replaceChildren(...[['overview', 'Overview'], ['changes', 'Changes (' + fileCount(t) + ')']].map(([k, label]) => {
+      const b = el('button', { textContent:label, className:k === view ? 'on' : '' }); b.onclick = () => show(k); return b;
+    }));
+    if (!detail) return;
+    body.replaceChildren(v === 'overview' ? overview(t, detail, (i) => show('changes', i)) : changesView(t, detail));
+    body.scrollTop = 0;
+    if (fileIndex != null) body.querySelectorAll('.diff details')[fileIndex]?.scrollIntoView({ block:'start' });
+  };
+  show('overview');
+  getDetail(t).then((d) => { if (selected !== t.id) return; detail = d; show(view); })
+    .catch((e) => { body.replaceChildren(el('div', { className:'err', textContent:e.message })); });
+
+  const branchName = 'graveyard/' + (t.kind === 'commit' ? 'commit' : t.kind) + '-' + t.sha.slice(0, 7);
   const b = el('button', { className:'raise', textContent:'Raise on a new branch' });
-  const out = el('div');
+  const out = el('div', { className:'note', textContent:'Makes branch ' + branchName + '. Your current branch and files stay as they are.' });
   b.onclick = async () => {
-    b.disabled = true; out.className = ''; out.textContent = '';
+    b.disabled = true; out.className = 'note'; out.textContent = 'raising...';
     try {
       const r = await fetch('/api/revive', { method:'POST', headers:{ 'x-graveyard-token':TOKEN, 'content-type':'application/json' }, body:JSON.stringify({ id:t.id }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error);
       out.className = 'done';
       out.textContent = 'Raised on branch ' + j.branch + '. Run: git switch ' + j.branch;
-      const o = pickables.find((x) => x.userData.tomb.id === t.id);
-      if (o) o.userData.risenAt = clock.getElapsedTime();
+      b.textContent = 'Raised';
+      if (o) resurrect(o, j.branch);
     } catch (e) { out.className = 'err'; out.textContent = e.message; b.disabled = false; }
   };
-  kids.push(b, out);
-  p.replaceChildren(...kids);
+  const foot = el('div', { className:'pf' }, b, out);
+  p.replaceChildren(head, body, foot);
   p.classList.add('open');
 }
 
@@ -534,31 +689,93 @@ function renderTabs() {
   }));
 }
 
+/* ---------- resurrection ---------- */
+const timer = new THREE.Timer();
+const clock = { getElapsedTime: () => timer.getElapsed() };
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const span = (a, b, x) => clamp01((x - a) / (b - a));
+const smooth = (k) => k * k * (3 - 2 * k);
+const pillarGeom = (() => { const g = new THREE.CylinderGeometry(0.8, 0.8, 16, 40, 1, true); g.translate(0, 8, 0); return g; })();
+
+function resurrect(o, branch) {
+  const u = o.userData;
+  if (u.res) return;
+  const g = new THREE.Group();
+  const pillar = new THREE.Mesh(pillarGeom, new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide,
+    uniforms:{ opacity:{ value:0 }, color:{ value:new THREE.Color(0xffe2a0) } },
+    vertexShader:'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader:'uniform float opacity; uniform vec3 color; varying vec2 vUv; void main(){ float a = pow(1. - vUv.y, 1.6) * opacity; gl_FragColor = vec4(color * a, a); }',
+  }));
+  const n = 90, pos = new Float32Array(n * 3), seed = [];
+  for (let i = 0; i < n; i++) seed.push([Math.random() * Math.PI * 2, 0.2 + Math.random() * 0.7, 0.6 + Math.random() * 1.4, Math.random() * 4]);
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const sparks = new THREE.Points(sg, new THREE.PointsMaterial({ map:glowTexture('rgba(255,236,170,1)'), color:0xffe8a8, size:0.22, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+  const light = new THREE.PointLight(0xffd88a, 0, 7, 2); light.position.y = 1.4;
+  const label = labelSprite('risen on ' + branch, '#ffe6a0'); label.position.y = 2.75; label.material.opacity = 0;
+  if (u.label) u.label.visible = false; // the risen label takes the ghost's name tag's place
+  g.add(pillar, sparks, light, label);
+  o.add(g);
+  u.res = { t0:clock.getElapsedTime() - (reduceMotion ? 10 : 0), pillar, sparks, seed, pos, light, label, leanX:u.body.rotation.x, leanZ:u.body.rotation.z };
+}
+
+function stepResurrection(o, t) {
+  const u = o.userData, r = u.res, tr = t - r.t0;
+  const up = smooth(span(0.7, 2.3, tr));
+  const shake = tr < 0.9 ? (1 - tr / 0.9) * 0.045 : 0;
+  u.body.position.x = Math.sin(t * 70) * shake;
+  const bob = tr > 2.3 && !reduceMotion ? Math.sin(t * 1.4) * 0.05 : 0;
+  const spin = up * Math.PI * 2;
+  if (!u.ghost) { u.body.rotation.set(r.leanX * (1 - up), spin, r.leanZ * (1 - up)); }
+  r.pillar.material.uniforms.opacity.value = 0.85 * span(0.25, 1.3, tr) - 0.65 * span(2.3, 3.6, tr);
+  r.light.intensity = 3.2 * span(0.25, 1.3, tr) - 2 * span(2.3, 3.6, tr);
+  r.label.material.opacity = span(2.0, 2.8, tr);
+  r.sparks.material.opacity = Math.min(span(0.4, 1, tr), 1 - 0.6 * span(3.5, 5, tr));
+  for (let i = 0; i < r.seed.length; i++) {
+    const [a, rad, sp, off] = r.seed[i];
+    const h = ((tr * sp + off) % 3.6);
+    const ang = a + tr * 1.6 + h;
+    r.pos.set([Math.cos(ang) * rad * (1 - h / 5), h, Math.sin(ang) * rad * (1 - h / 5)], i * 3);
+  }
+  r.sparks.geometry.attributes.position.needsUpdate = true;
+  u.glow.material.color.setHex(0xffd88a); u.glow.scale.setScalar(1 + 0.7 * span(0, 1.2, tr));
+  return { rise:up * 0.9 + bob, spin };
+}
+
+/* camera glides to the grave you open */
+let focus = null;
+function focusOn(p) { focus = new THREE.Vector3(p.x, 0.7, p.z); }
+canvas.addEventListener('pointerdown', () => { focus = null; });
+
 /* ---------- loop ---------- */
-const clock = new THREE.Clock();
 const tmp = new THREE.Vector3();
-function tick() {
+function tick(now) {
+  timer.update(now);
   const t = clock.getElapsedTime();
   for (const o of pickables) {
     const u = o.userData, sel = u.tomb.id === selected, hov = o === hovered;
-    const lift = (sel ? 0.16 : hov ? 0.08 : 0);
+    const res = u.res ? stepResurrection(o, t) : null;
+    const lift = res ? res.rise : (sel ? 0.16 : hov ? 0.08 : 0);
+    const k = res ? 1 : 0.15; // the resurrection drives the height directly
     if (u.ghost) {
-      const bob = reduceMotion ? 0 : Math.sin(t * 1.6 + u.phase) * 0.12;
-      u.body.position.y += (u.baseY + bob + lift - u.body.position.y) * 0.15;
+      const bob = reduceMotion || res ? 0 : Math.sin(t * 1.6 + u.phase) * 0.12;
+      u.body.position.y += (u.baseY + bob + lift - u.body.position.y) * k;
       tmp.set(camera.position.x, o.position.y, camera.position.z);
       u.body.lookAt(tmp);
+      if (res) u.body.rotateY(res.spin);
     } else {
-      u.body.position.y += (u.baseY + lift - u.body.position.y) * 0.15;
+      u.body.position.y += (u.baseY + lift - u.body.position.y) * k;
     }
     for (const m of u.mats) {
-      if (u.ghost) m.emissiveIntensity = sel ? 1 : hov ? 0.8 : 0.55;
-      else m.emissive.setHex(sel ? 0x2a3442 : hov ? 0x1a212a : u.emissive);
+      if (u.ghost) m.emissiveIntensity = res ? 1.1 : sel ? 1 : hov ? 0.8 : 0.55;
+      else m.emissive.setHex(res ? 0x3a2c0c : sel ? 0x2a3442 : hov ? 0x1a212a : u.emissive);
     }
-    u.glow.material.opacity = (u.ghost ? 0.35 : 0.32) + (sel ? 0.35 : hov ? 0.15 : 0) + (reduceMotion ? 0 : Math.sin(t * 2 + o.position.x) * 0.04);
-    if (u.risenAt != null) {
-      const k = Math.min(1, (t - u.risenAt) / 1.2);
-      u.glow.material.color.setHex(0xfff2b0); u.glow.scale.setScalar(1 + k * 0.8);
-    }
+    u.glow.material.opacity = (u.ghost ? 0.35 : 0.32) + (res ? 0.4 : sel ? 0.35 : hov ? 0.15 : 0) + (reduceMotion ? 0 : Math.sin(t * 2 + o.position.x) * 0.04);
+  }
+  if (focus) {
+    const d = focus.clone().sub(controls.target).multiplyScalar(0.08);
+    controls.target.add(d); camera.position.add(d);
+    if (d.lengthSq() < 1e-7) focus = null;
   }
   if (!reduceMotion) fireflies.update(t);
   controls.update();
@@ -577,7 +794,17 @@ async function load() {
   $('repo').textContent = data.repo;
   renderTabs(); buildGraves();
 }
-load().then(() => { window.__graveyardReady = true; }).catch((e) => { $('repo').textContent = 'error: ' + e.message; });
+load().then(() => {
+  window.__graveyardReady = true;
+  // ?open=<id>&tab=changes&rise=1 opens a grave on load (used for screenshots and links)
+  const q = new URLSearchParams(location.search);
+  const t = q.get('open') && data.tombstones.find((x) => x.id === q.get('open'));
+  if (t) {
+    openPanel(t);
+    if (q.get('tab') === 'changes') setTimeout(() => document.querySelectorAll('.ptabs button')[1]?.click(), 300);
+    if (q.get('rise')) { const o = pickables.find((x) => x.userData.tomb.id === t.id); if (o) resurrect(o, 'graveyard/preview'); }
+  }
+}).catch((e) => { $('repo').textContent = 'error: ' + e.message; });
 tick();
 </script>
 </body>
