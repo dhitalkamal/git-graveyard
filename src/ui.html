@@ -64,6 +64,18 @@
   .diff pre div { padding:0 10px; white-space:pre; min-height:1.45em; }
   .diff .l-add { background:rgba(79,191,122,.13); color:#b9f0cb; } .diff .l-del { background:rgba(217,96,107,.14); color:#f6c1c6; }
   .diff .l-hunk { color:#79a8d9; background:#101823; } .diff .l-meta { color:var(--dim); }
+  .dmode { display:flex; gap:4px; margin-bottom:10px; }
+  .dmode button { background:#151c26; color:var(--dim); border:1px solid #263041; border-radius:6px; padding:4px 10px; font:inherit; font-size:12px; cursor:pointer; }
+  .dmode button.on { color:var(--fg); border-color:#8fa0b8; }
+  .diff .uni div { display:grid; grid-template-columns:42px 42px 1fr; padding:0; }
+  .diff .uni div > span { padding:0 6px; white-space:pre; }
+  .diff .no { color:#55606e; text-align:right; user-select:none; border-right:1px solid #1c2531; }
+  .diff .sbs { display:grid; grid-template-columns:42px minmax(0,1fr) 42px minmax(0,1fr); padding:4px 0; background:#0b0f15; overflow:auto; }
+  .diff .sbs > span { padding:0 6px; white-space:pre; overflow:hidden; text-overflow:ellipsis; min-height:1.45em; }
+  .diff .sbs .mid { border-left:1px solid #263041; }
+  .diff .sbs .c-del { background:rgba(217,96,107,.16); color:#f6c1c6; } .diff .sbs .c-add { background:rgba(79,191,122,.14); color:#b9f0cb; }
+  .diff .sbs .c-empty { background:repeating-linear-gradient(135deg, transparent 0 6px, rgba(255,255,255,.025) 6px 12px); }
+  .diff .sbs .c-hunk { color:#79a8d9; background:#101823; grid-column:1 / -1; } .diff .sbs .c-meta { color:var(--dim); grid-column:1 / -1; }
   button.raise { width:100%; background:#22303f; color:var(--fg); border:1px solid #3a4b60; border-radius:8px; padding:10px; cursor:pointer; font:inherit; }
   button.raise:hover { background:#2a3b4e; } button.raise:disabled { opacity:.5; cursor:default; }
   button.bury { width:100%; margin-top:8px; background:transparent; color:#f08a93; border:1px solid #5a2b31; border-radius:8px; padding:8px; cursor:pointer; font:inherit; }
@@ -624,21 +636,78 @@ function parsePatch(patch) {
   return files;
 }
 
+/* number the lines of one file's diff from its @@ headers */
+function numbered(lines) {
+  let o = 0, n = 0;
+  // the patch's final newline leaves one empty string; real blank context lines are " "
+  return lines.filter(([k, l]) => !(k === 'ctx' && l === '')).map(([k, l]) => {
+    if (k === 'hunk') { const m = l.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)/); if (m) { o = +m[1]; n = +m[2]; } return { k, l }; }
+    if (k === 'meta') return { k, l };
+    if (k === 'del') return { k, l:l.slice(1), o:o++ };
+    if (k === 'add') return { k, l:l.slice(1), n:n++ };
+    return { k, l:l.slice(1), o:o++, n:n++ };
+  });
+}
+
+function unified(rows) {
+  const pre = el('pre', { className:'uni' });
+  for (const r of rows) {
+    const sign = r.k === 'add' ? '+' : r.k === 'del' ? '-' : r.k === 'ctx' ? ' ' : '';
+    pre.append(el('div', { className:'l-' + r.k }, el('span', { className:'no', textContent:r.o ?? '' }), el('span', { className:'no', textContent:r.n ?? '' }), el('span', { textContent:sign + r.l })));
+  }
+  return pre;
+}
+
+/* old on the left, new on the right; a run of removed lines pairs up with the added run after it */
+function sideBySide(rows) {
+  const grid = el('div', { className:'sbs' });
+  const cell = (cls, text) => el('span', { className:cls, textContent:text ?? '' });
+  const pair = (L, R) => {
+    grid.append(cell('no', L?.o), cell('code ' + (L ? (L.k === 'del' ? 'c-del' : '') : 'c-empty'), L?.l),
+      cell('no mid', R?.n), cell('code ' + (R ? (R.k === 'add' ? 'c-add' : '') : 'c-empty'), R?.l));
+  };
+  for (let i = 0; i < rows.length; ) {
+    const r = rows[i];
+    if (r.k === 'hunk' || r.k === 'meta') { grid.append(cell('c-' + r.k, r.l)); i++; continue; }
+    if (r.k === 'ctx') { pair(r, r); i++; continue; }
+    const dels = [], adds = [];
+    while (i < rows.length && rows[i].k === 'del') dels.push(rows[i++]);
+    while (i < rows.length && rows[i].k === 'add') adds.push(rows[i++]);
+    for (let j = 0; j < Math.max(dels.length, adds.length); j++) pair(dels[j], adds[j]);
+  }
+  return grid;
+}
+
+let diffMode = localStorage.getItem('graveyard.diffMode') || 'split';
 function changesView(t, d) {
   const box = el('div', { className:'diff' });
   if (!d.patch.trim()) { box.append(el('div', { className:'note', textContent:'No line changes. This one holds the same content as where it started.' })); return box; }
-  if (t.kind === 'ghost' && t.guess) box.append(el('div', { className:'note', textContent:'Red is your current ' + t.guess.path + '. Green is the lost version.' }));
-  if (t.kind === 'ward') box.append(el('div', { className:'note', textContent:'Everything that differed from your last commit when the ward fired, including files never staged.' }));
-  for (const f of parsePatch(d.patch)) {
-    if (f.note) { box.append(el('h3', { textContent:f.name })); continue; }
-    const det = el('details', { open:true });
-    det.append(el('summary', {}, el('span', { className:'p', textContent:f.name }), el('span', { className:'add', textContent:'+' + f.add }), el('span', { className:'del', textContent:'-' + f.del })));
-    const pre = el('pre');
-    for (const [k, l] of f.lines.slice(0, 3000)) pre.append(el('div', { className:'l-' + k, textContent:l }));
-    if (f.lines.length > 3000) pre.append(el('div', { className:'l-meta', textContent:'... ' + (f.lines.length - 3000) + ' more lines' }));
-    det.append(pre);
-    box.append(det);
-  }
+  const mode = el('div', { className:'dmode' });
+  const files = el('div');
+  const draw = () => {
+    mode.replaceChildren(...[['split', 'Side by side'], ['unified', 'Unified']].map(([k, label]) => {
+      const b = el('button', { textContent:label, className:k === diffMode ? 'on' : '' });
+      b.onclick = () => { diffMode = k; localStorage.setItem('graveyard.diffMode', k); draw(); };
+      return b;
+    }));
+    files.replaceChildren();
+    for (const f of parsePatch(d.patch)) {
+      if (f.note) { files.append(el('h3', { textContent:f.name })); continue; }
+      const det = el('details', { open:true });
+      det.append(el('summary', {}, el('span', { className:'p', textContent:f.name }), el('span', { className:'add', textContent:'+' + f.add }), el('span', { className:'del', textContent:'-' + f.del })));
+      const rows = numbered(f.lines.slice(0, 3000));
+      det.append(diffMode === 'split' ? sideBySide(rows) : unified(rows));
+      if (f.lines.length > 3000) det.append(el('div', { className:'note', textContent:'... ' + (f.lines.length - 3000) + ' more lines' }));
+      files.append(det);
+    }
+  };
+  box.append(mode);
+  if (t.kind === 'ghost' && t.guess) box.append(el('div', { className:'note', textContent:'Left is your current ' + t.guess.path + '. Right is the lost version.' }));
+  if (t.kind === 'ward') box.append(el('div', { className:'note', textContent:'Left is your last commit. Right is your work when the ward fired, including files never staged.' }));
+  if (t.kind === 'commit') box.append(el('div', { className:'note', textContent:'Left is where the lost work started. Right is the lost work.' }));
+  if (t.kind === 'stash') box.append(el('div', { className:'note', textContent:'Left is the commit you stashed on. Right is your stashed changes.' }));
+  box.append(files);
+  draw();
   if (d.truncated) box.append(el('div', { className:'note', textContent:'Diff cut short: it is very large. Raise it and use git to see the rest.' }));
   return box;
 }

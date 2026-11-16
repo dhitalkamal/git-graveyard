@@ -46,6 +46,15 @@ git add -A
 GIT_AUTHOR_DATE="$OLD" GIT_COMMITTER_DATE="$OLD" git commit -qm "try a risky experiment"
 GIT_COMMITTER_DATE="$OLD" git reset -q --hard HEAD~1
 
+# 3d. edits: rewrite, delete and add lines in existing files (red and green in the diff)
+awk 'NR>=5 && NR<=7 { print "app line " NR " (rewritten: faster startup)"; next }
+     NR>=12 && NR<=14 { next }
+     NR==20 { print; print "app: new retry logic"; print "app: new timeout of 30s"; next }
+     { print }' app.js > app.js.new && mv app.js.new app.js
+awk 'NR==3 { print "util line 3 renamed to helper"; next } NR==10 { next } { print }' util.js > util.js.new && mv util.js.new util.js
+c "tune app startup and clean up util"
+git reset -q --hard HEAD~1
+
 # 4. ghost: staged edit that was then discarded
 { cat util.js; echo "a precious helper nobody committed"; } > util.js.new && mv util.js.new util.js
 git add util.js
