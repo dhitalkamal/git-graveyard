@@ -26,14 +26,18 @@ function healthOf(deadline, span, now) {
 function findLostCommits(top, reachable) {
   const lost = new Map(); // sha -> { killer, killedAt }
 
-  const raw = tryGit(top, ['log', '-g', '--all', '--format=%H%x09%gd%x09%ct%x09%gs']) || '';
+  // --date=unix turns each selector into ref@{<time the reflog entry was written>}.
+  // That is when the ref moved, which is the moment of death, not the commit's own date.
+  // git prints each ref's entries newest first, so the position gives the index.
+  const raw = tryGit(top, ['log', '-g', '--all', '--date=unix', '--format=%H%x09%gd%x09%gs']) || '';
   const byRef = new Map();
   for (const l of lines(raw)) {
-    const [sha, gd, ct, ...subj] = l.split('\t');
+    const [sha, gd, ...subj] = l.split('\t');
     const m = gd.match(/^(.*)@\{(\d+)\}$/);
     if (!m) continue;
     if (!byRef.has(m[1])) byRef.set(m[1], []);
-    byRef.get(m[1]).push({ sha, idx: Number(m[2]), at: Number(ct) * 1000, subject: subj.join('\t') });
+    const list = byRef.get(m[1]);
+    list.push({ sha, idx: list.length, at: Number(m[2]) * 1000, subject: subj.join('\t') });
   }
   for (const [ref, entries] of byRef) {
     entries.sort((a, b) => a.idx - b.idx);

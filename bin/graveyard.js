@@ -10,10 +10,14 @@ import { startServer } from '../src/server.js';
 import { installShim, uninstallShim, wardCheck, defaultShimDir } from '../src/shim.js';
 import { repoTop } from '../src/git.js';
 import { detailOf } from '../src/changes.js';
+import { applyFilters } from '../src/filter.js';
 
 const HELP = `graveyard: raise the work git lost
 
   graveyard [scan] [--json] [--no-ghosts]   list lost commits, stashes, ghosts and ward snapshots
+      [--big] [--dying] [--sort newest|dying|biggest]
+                                            --big: 100+ changed lines or 10+ files
+                                            --dying: git may prune it within 3 days
   graveyard ui [--port N]                   open the cemetery in your browser (127.0.0.1 only)
   graveyard show <id>                       print what a tombstone holds: commits and the full diff
   graveyard revive <id>                     bring one back on a new branch (touches nothing you have)
@@ -27,9 +31,14 @@ const HELP = `graveyard: raise the work git lost
   graveyard ward unshim [--dir D]           remove the git shim
 `;
 
-const [cmd = 'scan', ...rest] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+// `graveyard --big` means `graveyard scan --big`
+if (argv[0]?.startsWith('--') && !['--help'].includes(argv[0])) argv.unshift('scan');
+const [cmd = 'scan', ...rest] = argv;
 const flags = new Set(rest.filter((a) => a.startsWith('--')));
-const args = rest.filter((a) => !a.startsWith('--'));
+const si = rest.indexOf('--sort');
+const sortBy = si >= 0 ? rest[si + 1] : 'newest';
+const args = rest.filter((a, i) => !a.startsWith('--') && !(si >= 0 && i === si + 1));
 
 async function readStdin() {
   const chunks = [];
@@ -40,16 +49,18 @@ async function readStdin() {
 try {
   if (cmd === 'help' || cmd === '--help' || cmd === '-h') {
     process.stdout.write(HELP);
-  } else if (cmd === 'scan' || cmd === '--json' || cmd === '--no-ghosts') {
-    const f = new Set([...flags, ...(cmd.startsWith('--') ? [cmd] : [])]);
-    const { top, tombstones } = scan(process.cwd(), { ghosts: !f.has('--no-ghosts') });
+  } else if (cmd === 'scan') {
+    const f = flags;
+    const { top, tombstones: all } = scan(process.cwd(), { ghosts: !f.has('--no-ghosts') });
+    const tombstones = applyFilters(all, { big: f.has('--big'), dying: f.has('--dying'), sort: sortBy });
     if (f.has('--json')) {
       console.log(JSON.stringify(tombstones, (k, v) => (v === Infinity ? null : v), 2));
     } else if (!tombstones.length) {
-      console.log(`${bold('The graveyard is empty.')} ${dim(top)}`);
+      console.log(all.length ? `No graves match. ${dim(`${all.length} hidden by the filter.`)}` : `${bold('The graveyard is empty.')} ${dim(top)}`);
     } else {
       console.log(`${bold('Graveyard')} ${dim(top)}\n`);
       for (const t of tombstones) console.log(renderTomb(t) + '\n');
+      if (all.length > tombstones.length) console.log(dim(`${all.length - tombstones.length} more hidden by the filter.`));
       console.log(dim('Bring one back: graveyard revive <id>'));
     }
   } else if (cmd === 'ui') {

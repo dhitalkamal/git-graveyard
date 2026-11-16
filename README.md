@@ -65,6 +65,17 @@ graveyard ward unshim [--dir D]           remove the git shim
 graveyard ward list                       list ward snapshots
 ```
 
+Find what matters first:
+
+```
+graveyard --dying              # git may prune these within 3 days: save them first
+graveyard --big                # 100+ changed lines or 10+ files
+graveyard --sort dying         # or: newest (default), biggest
+```
+
+The cemetery has the same filters under the tabs. The sort decides who stands in the
+front row. Big graves stand taller, and dying ones pulse red.
+
 Ids look like `c:2a3a289` (commit), `s:546a946` (stash), `g:6156d44` (ghost) and
 `w:20261116T060717` (ward). A unique sha prefix works too.
 

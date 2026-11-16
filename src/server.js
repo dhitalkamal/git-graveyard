@@ -27,6 +27,9 @@ function vendorFile(pathname) {
   }
 }
 
+// small shared modules the page imports, so the UI and the CLI filter the same way
+const LIB = new Map(['filter.js', 'time.js'].map((f) => [`/lib/${f}`, readFileSync(fileURLToPath(new URL(`./${f}`, import.meta.url)))]));
+
 const json = (res, code, body) => {
   res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' });
   res.end(JSON.stringify(body, (k, v) => (v === Infinity ? null : v)));
@@ -53,6 +56,10 @@ export function startServer(repo, { port = 4747 } = {}) {
           'cache-control': 'no-store',
         });
         return res.end(PAGE.replace('__TOKEN__', token));
+      }
+      if (req.method === 'GET' && LIB.has(url.pathname)) {
+        res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
+        return res.end(LIB.get(url.pathname));
       }
       if (req.method === 'GET' && url.pathname.startsWith('/vendor/three/')) {
         const body = vendorFile(url.pathname);

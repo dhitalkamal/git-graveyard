@@ -31,6 +31,19 @@ echo "refund flow" >> payments.js; c "add refunds"
 git switch -q main
 git branch -D feature/payments >/dev/null
 
+# 3b. big: a 12-file refactor lost to reset
+mkdir -p src
+for n in $(seq 1 12); do lines "module $n" > "src/mod$n.js"; done
+c "big refactor: split app into modules"
+git reset -q --hard HEAD~1
+
+# 3c. dying: an experiment lost 29 days ago (reflog expiry is 30 days), so about 1 day left
+OLD="$(( $(date +%s) - 29 * 86400 )) +0000"
+echo "old experiment" > experiment.js
+git add -A
+GIT_AUTHOR_DATE="$OLD" GIT_COMMITTER_DATE="$OLD" git commit -qm "try a risky experiment"
+GIT_COMMITTER_DATE="$OLD" git reset -q --hard HEAD~1
+
 # 4. ghost: staged edit that was then discarded
 { cat util.js; echo "a precious helper nobody committed"; } > util.js.new && mv util.js.new util.js
 git add util.js
@@ -43,7 +56,7 @@ echo "scratch notes, never added to git" > notes.txt
 cat > TRY.txt <<'T'
 Try these from this folder (G = path to graveyard/bin/graveyard.js):
 
-  node G                          list the dead (3 tombstones + 1 ghost)
+  node G                          list the dead (5 graves + 1 ghost)
   node G revive <id>              bring one back on a new branch
   node G ward run -- git reset --hard
   git clean -fd                   notes.txt is gone now

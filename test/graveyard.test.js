@@ -375,3 +375,29 @@ test('delete ward: API needs token, only deletes wards, CLI and scan agree', asy
     rmSync(d, { recursive: true, force: true });
   }
 });
+
+test('death time is when the reflog moved, not the commit date; filters pick big and dying', async () => {
+  const { applyFilters } = await import('../src/filter.js');
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  const old = `${Math.floor(Date.now() / 1000) - 29 * 86400} +0000`;
+  writeFileSync(join(d, 'x.txt'), 'x\n');
+  sh(d, 'add', 'x.txt');
+  execFileSync('git', ['commit', '-qm', 'old one'], { cwd: d, env: { ...process.env, GIT_COMMITTER_DATE: old, GIT_AUTHOR_DATE: old } });
+  execFileSync('git', ['reset', '-q', '--hard', 'HEAD~1'], { cwd: d, env: { ...process.env, GIT_COMMITTER_DATE: old } });
+  writeFileSync(join(d, 'big.txt'), Array.from({ length: 150 }, (_, i) => `l${i}`).join('\n') + '\n');
+  sh(d, 'add', 'big.txt');
+  sh(d, 'commit', '-qm', 'big one');
+  sh(d, 'reset', '-q', '--hard', 'HEAD~1');
+
+  const { tombstones } = scan(d);
+  const oldT = tombstones.find((t) => t.title === 'old one');
+  const bigT = tombstones.find((t) => t.title === 'big one');
+  assert.ok(Date.now() - oldT.died > 28 * 86400e3, 'old reset dated 29 days ago');
+  assert.ok(Date.now() - bigT.died < 60e3, 'new reset dated now');
+  assert.deepEqual(applyFilters(tombstones, { dying: true }).map((t) => t.title), ['old one']);
+  assert.deepEqual(applyFilters(tombstones, { big: true }).map((t) => t.title), ['big one']);
+  assert.equal(applyFilters(tombstones, { sort: 'dying' })[0].title, 'old one');
+  assert.equal(applyFilters(tombstones, { sort: 'biggest' })[0].title, 'big one');
+  rmSync(d, { recursive: true, force: true });
+});
