@@ -54,7 +54,7 @@ npm install -g git-graveyard
 ### Try it in 2 minutes, no risk to your own repos
 
 ```
-git clone <this repo> graveyard && cd graveyard
+git clone https://github.com/dhitalkamal/git-graveyard.git graveyard && cd graveyard
 npm install
 ./scripts/sandbox.sh                 # builds ../graveyard-sandbox, a repo full of git disasters
 cd ../graveyard-sandbox

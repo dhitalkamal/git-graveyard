@@ -20,6 +20,9 @@
     "test": "node --test test/*.test.js"
   },
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/dhitalkamal/git-graveyard.git" },
+  "homepage": "https://github.com/dhitalkamal/git-graveyard#readme",
+  "bugs": { "url": "https://github.com/dhitalkamal/git-graveyard/issues" },
   "dependencies": {
     "three": "^0.187.0"
   },
