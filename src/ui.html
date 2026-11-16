@@ -5,54 +5,120 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Graveyard</title>
 <style>
-  :root { --bg:#0e1116; --fg:#d7dde5; --dim:#7d8896; --stone:#3a424d; --stone2:#4a5460; --fresh:#6fcf97; --weathered:#e5c07b; --crumbling:#e06c75; --overdue:#c678dd; --safe:#56b6c2; }
+  :root { --bg:#07090d; --fg:#d7dde5; --dim:#7d8896; --fresh:#6fcf97; --weathered:#e5c07b; --crumbling:#e06c75; --overdue:#c678dd; --safe:#56b6c2; }
   * { box-sizing:border-box; }
-  body { margin:0; background:radial-gradient(ellipse at 50% -20%, #1d2430, var(--bg) 60%); color:var(--fg); font:14px/1.45 ui-monospace,Menlo,Consolas,monospace; min-height:100vh; }
-  header { padding:28px 32px 8px; }
-  h1 { margin:0; font-size:26px; letter-spacing:.08em; }
-  .repo { color:var(--dim); margin-top:4px; word-break:break-all; }
-  nav { padding:14px 32px; display:flex; gap:8px; flex-wrap:wrap; }
-  nav button { background:transparent; color:var(--dim); border:1px solid var(--stone); border-radius:999px; padding:5px 14px; cursor:pointer; font:inherit; }
-  nav button.on { color:var(--fg); border-color:var(--fg); }
-  main { padding:8px 32px 60px; display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:22px; }
-  .tomb { position:relative; background:linear-gradient(#1a2029,#151a21); border:1px solid #222a35; border-radius:10px; padding:14px 14px 16px; }
-  .tomb svg { display:block; margin:0 auto 6px; }
-  .title { font-weight:700; word-break:break-word; margin:4px 0; }
-  .meta { color:var(--dim); font-size:12px; }
-  .meta b { color:var(--fg); font-weight:400; }
-  .pill { display:inline-block; font-size:11px; padding:1px 9px; border-radius:999px; border:1px solid currentColor; margin-bottom:6px; }
+  [hidden] { display:none !important; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--fg); font:13px/1.45 ui-monospace,Menlo,Consolas,monospace; }
+
+  /* sky */
+  .sky { position:fixed; inset:0; background:
+      radial-gradient(ellipse 60% 40% at 78% 14%, rgba(150,170,210,.18), transparent 70%),
+      linear-gradient(#0b1020 0%, #0d1522 38%, #0a0f16 62%, #07090d 100%); }
+  .stars { position:fixed; inset:0; background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff8, transparent), radial-gradient(1px 1px at 33% 9%, #fff6, transparent),
+      radial-gradient(1.5px 1.5px at 52% 22%, #fff9, transparent), radial-gradient(1px 1px at 66% 12%, #fff7, transparent),
+      radial-gradient(1px 1px at 88% 30%, #fff6, transparent), radial-gradient(1px 1px at 22% 34%, #fff5, transparent),
+      radial-gradient(1px 1px at 92% 8%, #fff8, transparent), radial-gradient(1px 1px at 5% 6%, #fff6, transparent); }
+  .moon { position:fixed; right:14%; top:9%; width:74px; height:74px; border-radius:50%;
+      background:radial-gradient(circle at 35% 35%, #fbfdff, #b9c6dc 70%); box-shadow:0 0 70px 26px rgba(160,185,235,.28); }
+  .fog { position:fixed; left:0; right:0; top:34%; height:30%; pointer-events:none;
+      background:linear-gradient(transparent, rgba(120,140,170,.10) 50%, transparent); }
+
+  /* stage */
+  .stage { position:fixed; inset:0; perspective:1100px; perspective-origin:50% 38%; cursor:grab; touch-action:none; }
+  .stage.drag { cursor:grabbing; }
+  .world { position:absolute; left:50%; top:62%; width:0; height:0; transform-style:preserve-3d;
+      transform:translateZ(var(--zoom)) rotateX(calc(var(--pitch) * -1deg)) rotateY(calc(var(--yaw) * 1deg)); }
+  .ground { position:absolute; transform:rotateX(90deg); border-radius:50%;
+      background:
+        radial-gradient(circle, rgba(0,0,0,0) 38%, #07090d 72%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 60px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 60px),
+        radial-gradient(circle, #1c2a22, #101a16 70%); }
+
+  .stone { position:absolute; width:110px; height:150px; transform-style:preserve-3d; cursor:pointer; }
+  .body { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .25s ease; }
+  .stone:hover .body { transform:translateY(-8px); }
+  .layer { position:absolute; inset:0; border-radius:55px 55px 3px 3px; backface-visibility:visible; }
+  .front { display:flex; flex-direction:column; align-items:center; padding:30px 12px 0; text-align:center; color:#aab4c0; text-shadow:0 1px 0 #0b0e12; overflow:hidden; }
+  .front svg.glyph { width:34px; height:34px; flex:none; opacity:.9; }
+  .front .t { margin-top:8px; font-size:11px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
+  .front .a { margin-top:auto; margin-bottom:12px; font-size:10px; opacity:.75; }
+  .cracks { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .base { position:absolute; left:-18px; right:-18px; top:125px; height:50px; transform:rotateX(90deg); border-radius:50%; opacity:.75; }
+  .stone.sel .body { filter:brightness(1.35); transform:translateY(-12px); }
+
+  .ghost .body { transform-origin:50% 100%; transform:rotateY(calc(var(--yaw) * -1deg)) rotateX(calc(var(--pitch) * 1deg)); animation:bob 4s ease-in-out infinite; transition:none; }
+  .ghost:hover .body { transform:rotateY(calc(var(--yaw) * -1deg)) rotateX(calc(var(--pitch) * 1deg)); }
+  .ghost.sel .body { filter:brightness(1.25); }
+  .gfig { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; }
+  .gfig svg { width:92px; height:100px; margin-top:6px; filter:drop-shadow(0 0 14px rgba(190,215,255,.55)); }
+  .gfig .t { margin-top:2px; font-size:10px; color:#cfdcf0; text-align:center; max-width:130px; text-shadow:0 0 6px #000, 0 0 3px #000; }
+  @keyframes bob { 50% { margin-top:-8px; } }
+
+  .stone.overdue .body { transform:rotateZ(5deg); }
+  .stone.overdue:hover .body { transform:rotateZ(5deg) translateY(-8px); }
+
+  /* hud */
+  .hud { position:fixed; left:0; right:0; top:0; padding:18px 24px; display:flex; gap:20px; align-items:flex-start; justify-content:space-between; pointer-events:none; }
+  .hud > * { pointer-events:auto; }
+  h1 { margin:0; font-size:22px; letter-spacing:.14em; text-shadow:0 0 18px rgba(160,185,235,.45); }
+  .repo { color:var(--dim); margin-top:2px; max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+  .tabs button, .ctl button { background:rgba(20,26,36,.72); color:var(--dim); border:1px solid #2b3442; border-radius:999px; padding:5px 13px; cursor:pointer; font:inherit; backdrop-filter:blur(4px); }
+  .tabs button.on { color:var(--fg); border-color:#8fa0b8; }
+  .hint { position:fixed; left:24px; bottom:18px; color:var(--dim); display:flex; gap:12px; align-items:center; }
+  .legend { position:fixed; left:24px; bottom:52px; display:flex; gap:14px; color:var(--dim); font-size:12px; }
+  .legend i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
+
+  .panel { position:fixed; right:18px; top:78px; bottom:18px; width:min(340px, 90vw); background:rgba(14,19,27,.88); border:1px solid #263041; border-radius:12px; padding:18px; overflow:auto; backdrop-filter:blur(8px); transform:translateX(120%); transition:transform .25s ease; }
+  .panel.open { transform:none; }
+  .panel h2 { margin:0 0 8px; font-size:15px; word-break:break-word; }
+  .pill { display:inline-block; font-size:11px; padding:1px 9px; border-radius:999px; border:1px solid currentColor; margin-bottom:10px; }
   .fresh{color:var(--fresh)} .weathered{color:var(--weathered)} .crumbling{color:var(--crumbling)} .overdue{color:var(--overdue)} .safe{color:var(--safe)}
-  .files { margin:6px 0 0; padding:0; list-style:none; color:var(--dim); font-size:12px; max-height:3.9em; overflow:hidden; }
-  button.raise { margin-top:12px; width:100%; background:#232b36; color:var(--fg); border:1px solid #384252; border-radius:6px; padding:8px; cursor:pointer; font:inherit; }
-  button.raise:hover { background:#2b3541; }
-  button.raise:disabled { opacity:.5; cursor:default; }
-  .done { margin-top:12px; color:var(--fresh); font-size:12px; word-break:break-all; }
-  .err { margin-top:12px; color:var(--crumbling); font-size:12px; }
-  .empty { grid-column:1/-1; text-align:center; color:var(--dim); padding:60px 0; }
-  .ghostfig { animation:float 4s ease-in-out infinite; }
-  @keyframes float { 50% { transform:translateY(-4px); } }
-  @media (prefers-reduced-motion: reduce) { .ghostfig { animation:none; } }
+  .row { color:var(--dim); margin:3px 0; word-break:break-word; } .row b { color:var(--fg); font-weight:400; }
+  .files { margin:10px 0 0; padding:0; list-style:none; color:var(--dim); font-size:12px; }
+  .close { position:absolute; right:12px; top:10px; background:none; border:0; color:var(--dim); font:inherit; cursor:pointer; font-size:16px; }
+  button.raise { margin-top:16px; width:100%; background:#22303f; color:var(--fg); border:1px solid #3a4b60; border-radius:8px; padding:10px; cursor:pointer; font:inherit; }
+  button.raise:hover { background:#2a3b4e; } button.raise:disabled { opacity:.5; cursor:default; }
+  .done { margin-top:12px; color:var(--fresh); word-break:break-all; } .err { margin-top:12px; color:var(--crumbling); }
+  .empty { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dim); pointer-events:none; }
+
+  @media (prefers-reduced-motion: reduce) { .ghost .body { animation:none; } .body, .panel { transition:none; } }
 </style>
 </head>
 <body>
-<header><h1>GRAVEYARD</h1><div class="repo" id="repo">reading the crypt...</div></header>
-<nav id="tabs"></nav>
-<main id="grid"></main>
+<div class="sky"></div><div class="stars"></div><div class="moon"></div><div class="fog"></div>
+<div class="stage" id="stage"><div class="world" id="world"></div></div>
+<div class="hud">
+  <div><h1>GRAVEYARD</h1><div class="repo" id="repo">reading the crypt...</div></div>
+  <div class="tabs" id="tabs"></div>
+</div>
+<div class="legend">
+  <span><i style="background:var(--fresh)"></i>fresh</span><span><i style="background:var(--weathered)"></i>weathered</span>
+  <span><i style="background:var(--crumbling)"></i>crumbling</span><span><i style="background:var(--overdue)"></i>overdue</span><span><i style="background:var(--safe)"></i>ward</span>
+</div>
+<div class="hint ctl"><span>drag: turn | wheel: zoom | arrows: turn | click a stone</span><button id="reset">reset view</button></div>
+<aside class="panel" id="panel"></aside>
+<div class="empty" id="empty" hidden>Nothing here. The graveyard is quiet.</div>
+
 <script>
 const TOKEN = '__TOKEN__';
 const KINDS = ['all', 'commit', 'stash', 'ghost', 'ward'];
 const LABEL = { commit:'lost commits', stash:'stashes', ghost:'ghosts', ward:'wards', all:'all' };
+const COLOR = { fresh:'#6fcf97', weathered:'#e5c07b', crumbling:'#e06c75', overdue:'#c678dd', safe:'#56b6c2' };
+const STONE = { fresh:[78,90,104], weathered:[70,78,88], crumbling:[58,62,70], overdue:[40,42,50], safe:[34,70,78] };
 const CRACKS = { fresh:0, weathered:1, crumbling:3, overdue:5, safe:0 };
+const CRACK_D = ['M24 150 L34 118 L22 98', 'M92 78 L76 98 L90 126', 'M50 42 L60 62 L52 78', 'M70 150 L64 128 L76 112', 'M14 80 L30 88 L26 100'];
 const DAY = 864e5;
-let data = null, tab = 'all';
+const view = { yaw:-18, pitch:38, zoom:-120 };
+const DEF = { ...view };
+let data = null, tab = 'all', selected = null;
 
-const el = (tag, props = {}, ...kids) => {
-  const e = Object.assign(document.createElement(tag), props);
-  for (const k of kids) e.append(k);
-  return e;
-};
-const NS = 'http://www.w3.org/2000/svg';
-const svg = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); for (const k of kids) e.append(k); return e; };
+const $ = (id) => document.getElementById(id);
+const hash = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+const rnd = (seed, n) => ((hash(seed + n) % 2000) / 1000) - 1; // -1..1
 
 function ago(ms) {
   const d = Math.max(0, data.now - ms);
@@ -67,96 +133,165 @@ function left(t) {
   if (r <= 0) return 'git may delete it any time';
   return r < DAY ? Math.max(1, Math.floor(r / 36e5)) + 'h left' : Math.floor(r / DAY) + 'd left';
 }
+const short = (t) => (t.deadline == null ? 'safe' : left(t));
 
-function figure(t) {
-  const s = svg('svg', { width:120, height:120, viewBox:'0 0 120 120' });
+const GLYPH = {
+  commit:'<svg class="glyph" viewBox="0 0 34 34"><path d="M17 4 V30 M8 12 H26" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/></svg>',
+  stash:'<svg class="glyph" viewBox="0 0 34 34"><rect x="5" y="8" width="24" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><path d="M5 15 H29" stroke="currentColor" stroke-width="3"/></svg>',
+  ward:'<svg class="glyph" viewBox="0 0 34 34"><path d="M17 3 L29 8 V17 C29 24 23 29 17 32 C11 29 5 24 5 17 V8 Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M11 17 l5 5 l9 -10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+};
+const GHOST_SVG = '<svg viewBox="0 0 92 100"><path d="M10 96 V44 a36 36 0 0 1 72 0 V96 l-12 -11 l-12 11 l-12 -11 l-12 11 l-12 -11 z" fill="#cfd9e8" opacity=".85"/><circle cx="33" cy="44" r="6" fill="#0b1020"/><circle cx="59" cy="44" r="6" fill="#0b1020"/><ellipse cx="46" cy="64" rx="7" ry="9" fill="#0b1020"/></svg>';
+
+function shade(rgb, k) { return 'rgb(' + rgb.map((v) => Math.round(v * k)).join(',') + ')'; }
+
+function makeStone(t, x, z) {
+  const s = el('div', { className:'stone ' + t.kind + ' ' + t.health });
+  const jy = rnd(t.id, 'y') * 10, jx = rnd(t.id, 'x') * 18, jz = rnd(t.id, 'z') * 18, jr = rnd(t.id, 'r') * 2;
+  s.style.transform = 'translate3d(' + (x - 55 + jx) + 'px,-150px,' + (z + jz) + 'px) rotateY(' + jy + 'deg) rotateZ(' + jr + 'deg)';
+  s.dataset.id = t.id;
+  const body = el('div', { className:'body' });
+  const rgb = STONE[t.health] || STONE.fresh;
+
   if (t.kind === 'ghost') {
-    s.setAttribute('class', 'ghostfig');
-    s.append(svg('path', { d:'M30 100 V50 a30 30 0 0 1 60 0 V100 l-10 -9 l-10 9 l-10 -9 l-10 9 l-10 -9 z', fill:'#c9d3df', opacity:'0.8' }));
-    s.append(svg('circle', { cx:48, cy:50, r:5, fill:'#0e1116' }), svg('circle', { cx:72, cy:50, r:5, fill:'#0e1116' }));
-    s.append(svg('ellipse', { cx:60, cy:68, rx:6, ry:8, fill:'#0e1116' }));
-    return s;
-  }
-  if (t.kind === 'ward') {
-    s.append(svg('path', { d:'M60 12 L98 26 V58 C98 82 80 98 60 108 C40 98 22 82 22 58 V26 Z', fill:'#1f3b44', stroke:'#56b6c2', 'stroke-width':3 }));
-    s.append(svg('path', { d:'M42 60 l12 12 l24 -26', fill:'none', stroke:'#56b6c2', 'stroke-width':6, 'stroke-linecap':'round', 'stroke-linejoin':'round' }));
-    return s;
-  }
-  const crack = CRACKS[t.health] || 0;
-  const stone = t.health === 'overdue' ? '#2c2f36' : '#4a5460';
-  s.append(svg('path', { d:'M26 108 V48 a34 34 0 0 1 68 0 V108 Z', fill:stone, stroke:'#2a313b', 'stroke-width':2 }));
-  s.append(svg('rect', { x:14, y:106, width:92, height:8, rx:3, fill:'#2a313b' }));
-  if (t.kind === 'stash') {
-    s.append(svg('rect', { x:44, y:42, width:32, height:26, rx:3, fill:'none', stroke:'#c9d3df', 'stroke-width':3 }));
-    s.append(svg('path', { d:'M44 52 H76', stroke:'#c9d3df', 'stroke-width':3 }));
+    const g = el('div', { className:'gfig' });
+    g.innerHTML = GHOST_SVG;
+    g.append(el('div', { className:'t', textContent: t.guess ? t.guess.path : 'nameless' }));
+    body.append(g);
   } else {
-    s.append(svg('path', { d:'M60 30 V70 M44 44 H76', stroke:'#c9d3df', 'stroke-width':5, 'stroke-linecap':'round' }));
+    for (let i = 0; i < 8; i++) {
+      const L = el('div', { className:'layer' });
+      L.style.transform = 'translateZ(' + ((i - 3.5) * 3.6) + 'px)';
+      L.style.background = i === 7 ? 'linear-gradient(160deg,' + shade(rgb, 1.25) + ',' + shade(rgb, .9) + ')' : shade(rgb, 0.55 + i * 0.03);
+      if (i === 7) {
+        L.classList.add('front');
+        L.style.boxShadow = 'inset 0 0 0 2px rgba(0,0,0,.25), inset 0 0 24px rgba(0,0,0,.35)';
+        L.innerHTML = GLYPH[t.kind] || GLYPH.commit;
+        L.append(el('div', { className:'t', textContent:t.title }), el('div', { className:'a', textContent:short(t) }));
+        const n = CRACKS[t.health] || 0;
+        if (n) {
+          const c = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          c.setAttribute('class', 'cracks'); c.setAttribute('viewBox', '0 0 110 150');
+          for (let k = 0; k < n; k++) {
+            const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            p.setAttribute('d', CRACK_D[k]); p.setAttribute('fill', 'none'); p.setAttribute('stroke', '#0a0d11'); p.setAttribute('stroke-width', '2.4');
+            c.append(p);
+          }
+          L.append(c);
+        }
+      }
+      body.append(L);
+    }
   }
-  const paths = ['M40 108 L46 90 L40 80', 'M84 70 L74 82 L82 96', 'M52 30 L60 42 L54 52', 'M70 100 L66 88 L74 80', 'M30 62 L40 66'];
-  for (let i = 0; i < crack; i++) s.append(svg('path', { d:paths[i], fill:'none', stroke:'#12161c', 'stroke-width':2.5 }));
+  s.append(body);
+  const base = el('div', { className:'base' });
+  base.style.background = 'radial-gradient(ellipse, ' + (COLOR[t.health] || '#6fcf97') + '66, transparent 68%)';
+  s.append(base);
+  s.addEventListener('click', () => { if (!moved) select(t, s); });
   return s;
 }
 
-function card(t) {
-  const c = el('div', { className:'tomb' });
-  c.append(figure(t));
-  c.append(el('span', { className:'pill ' + t.health, textContent: t.kind === 'ward' ? 'safe snapshot' : t.health + ', ' + left(t) }));
-  c.append(el('div', { className:'title', textContent:t.title }));
-  const m = el('div', { className:'meta' });
-  const row = (k, v) => { m.append(el('div', {}, k + ' ', el('b', { textContent:v }))); };
-  row(t.kind === 'ward' ? 'saved' : 'died', ago(t.died));
-  if (t.killer) row('killed by', t.killer);
-  if (t.kind === 'commit' && t.commits > 1) row('size', t.commits + ' commits');
+function renderWorld() {
+  const list = data.tombstones.filter((t) => tab === 'all' || t.kind === tab);
+  $('empty').hidden = list.length > 0;
+  const cols = Math.max(1, Math.ceil(Math.sqrt(list.length * 1.4)));
+  const rows = Math.ceil(list.length / cols) || 1;
+  const gap = 190;
+  const size = Math.max(cols, rows) * gap + 700;
+  const ground = el('div', { className:'ground' });
+  Object.assign(ground.style, { width:size + 'px', height:size + 'px', left:(-size / 2) + 'px', top:(-size / 2) + 'px' });
+  const nodes = [ground];
+  list.forEach((t, i) => {
+    const c = i % cols, r = Math.floor(i / cols);
+    const s = makeStone(t, (c - (cols - 1) / 2) * gap, (r - (rows - 1) / 2) * gap);
+    if (selected === t.id) s.classList.add('sel');
+    nodes.push(s);
+  });
+  $('world').replaceChildren(...nodes);
+}
+
+function renderTabs() {
+  $('tabs').replaceChildren(...KINDS.map((k) => {
+    const n = k === 'all' ? data.tombstones.length : data.tombstones.filter((t) => t.kind === k).length;
+    const b = el('button', { textContent:LABEL[k] + ' ' + n, className:k === tab ? 'on' : '' });
+    b.onclick = () => { tab = k; renderTabs(); renderWorld(); };
+    return b;
+  }));
+}
+
+function select(t, node) {
+  document.querySelectorAll('.stone.sel').forEach((n) => n.classList.remove('sel'));
+  node.classList.add('sel');
+  selected = t.id;
+  const p = $('panel');
+  const row = (k, v) => el('div', { className:'row' }, k + ' ', el('b', { textContent:v }));
+  const close = el('button', { className:'close', textContent:'x', title:'close' });
+  close.onclick = () => { p.classList.remove('open'); node.classList.remove('sel'); selected = null; };
+  const kids = [close, el('h2', { textContent:t.title }),
+    el('span', { className:'pill ' + t.health, textContent: t.kind === 'ward' ? 'safe snapshot' : t.health + ', ' + left(t) })];
+  kids.push(row(t.kind === 'ward' ? 'saved' : 'died', ago(t.died)));
+  if (t.killer) kids.push(row('killed by', t.killer));
+  if (t.kind === 'commit' && t.commits > 1) kids.push(row('size', t.commits + ' commits'));
   if (t.kind === 'ghost') {
-    row('size', t.size + ' bytes');
-    row('seance', t.guess ? 'looks like ' + t.guess.path + ' (' + t.guess.score + '%)' : 'nameless');
+    kids.push(row('size', t.size + ' bytes'));
+    kids.push(row('seance', t.guess ? 'looks like ' + t.guess.path + ' (' + t.guess.score + '%)' : 'nameless'));
   }
-  row('id', t.id);
-  c.append(m);
+  kids.push(row('id', t.id));
   if (t.files && t.files.length) {
     const ul = el('ul', { className:'files' });
-    for (const f of t.files.slice(0, 3)) ul.append(el('li', { textContent:f }));
-    if (t.files.length > 3) ul.append(el('li', { textContent:'+ ' + (t.files.length - 3) + ' more' }));
-    c.append(ul);
+    for (const f of t.files.slice(0, 8)) ul.append(el('li', { textContent:f }));
+    if (t.files.length > 8) ul.append(el('li', { textContent:'+ ' + (t.files.length - 8) + ' more' }));
+    kids.push(ul);
   }
   const b = el('button', { className:'raise', textContent:'Raise on a new branch' });
   const out = el('div');
   b.onclick = async () => {
-    b.disabled = true;
-    out.className = ''; out.textContent = '';
+    b.disabled = true; out.className = ''; out.textContent = '';
     try {
       const r = await fetch('/api/revive', { method:'POST', headers:{ 'x-graveyard-token':TOKEN, 'content-type':'application/json' }, body:JSON.stringify({ id:t.id }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error);
       out.className = 'done';
       out.textContent = 'Raised on branch ' + j.branch + '. Run: git switch ' + j.branch;
-    } catch (e) {
-      out.className = 'err'; out.textContent = e.message; b.disabled = false;
-    }
+    } catch (e) { out.className = 'err'; out.textContent = e.message; b.disabled = false; }
   };
-  c.append(b, out);
-  return c;
+  kids.push(b, out);
+  p.replaceChildren(...kids);
+  p.classList.add('open');
 }
 
-function render() {
-  const tabs = document.getElementById('tabs');
-  tabs.replaceChildren(...KINDS.map((k) => {
-    const n = k === 'all' ? data.tombstones.length : data.tombstones.filter((t) => t.kind === k).length;
-    const b = el('button', { textContent:LABEL[k] + ' ' + n, className:k === tab ? 'on' : '' });
-    b.onclick = () => { tab = k; render(); };
-    return b;
-  }));
-  const list = data.tombstones.filter((t) => tab === 'all' || t.kind === tab);
-  document.getElementById('grid').replaceChildren(...(list.length ? list.map(card) : [el('div', { className:'empty', textContent:'Nothing here. The graveyard is quiet.' })]));
+/* camera */
+function apply() {
+  const w = $('world').style;
+  w.setProperty('--yaw', view.yaw); w.setProperty('--pitch', view.pitch); w.setProperty('--zoom', view.zoom + 'px');
 }
+let moved = false, down = null;
+const stage = $('stage');
+stage.addEventListener('pointerdown', (e) => { down = { x:e.clientX, y:e.clientY, yaw:view.yaw, pitch:view.pitch }; moved = false; });
+window.addEventListener('pointermove', (e) => {
+  if (!down) return;
+  const dx = e.clientX - down.x, dy = e.clientY - down.y;
+  if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; stage.classList.add('drag'); }
+  if (!moved) return;
+  view.yaw = down.yaw + dx * 0.3;
+  view.pitch = Math.max(12, Math.min(80, down.pitch + dy * 0.25));
+  apply();
+});
+window.addEventListener('pointerup', () => { down = null; stage.classList.remove('drag'); setTimeout(() => { moved = false; }, 0); });
+stage.addEventListener('wheel', (e) => { e.preventDefault(); view.zoom = Math.max(-900, Math.min(500, view.zoom - e.deltaY * 0.6)); apply(); }, { passive:false });
+window.addEventListener('keydown', (e) => {
+  const k = { ArrowLeft:[-6, 0], ArrowRight:[6, 0], ArrowUp:[0, 4], ArrowDown:[0, -4] }[e.key];
+  if (!k) return;
+  view.yaw += k[0]; view.pitch = Math.max(12, Math.min(80, view.pitch + k[1])); apply();
+});
+$('reset').onclick = () => { Object.assign(view, DEF); apply(); };
 
 async function load() {
-  const r = await fetch('/api/tombs');
-  data = await r.json();
-  document.getElementById('repo').textContent = data.repo;
-  render();
+  data = await (await fetch('/api/tombs')).json();
+  $('repo').textContent = data.repo;
+  renderTabs(); renderWorld(); apply();
 }
-load().catch((e) => { document.getElementById('repo').textContent = 'error: ' + e.message; });
+apply();
+load().catch((e) => { $('repo').textContent = 'error: ' + e.message; });
 </script>
 </body>
 </html>
