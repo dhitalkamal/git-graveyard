@@ -3,7 +3,9 @@
 set -euo pipefail
 DEST="${1:-$(cd "$(dirname "$0")/../.." && pwd)/graveyard-sandbox}"
 case "$DEST" in *graveyard-sandbox*) ;; *) echo "refusing: path must contain graveyard-sandbox"; exit 1;; esac
-rm -rf "$DEST"; mkdir -p "$DEST"; cd "$DEST"
+# empty the folder but keep it, so a terminal already cd'd into it keeps working
+mkdir -p "$DEST"; cd "$DEST"
+find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 git init -q -b main
 git config user.email sandbox@example.com; git config user.name Sandbox
 
