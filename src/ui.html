@@ -5,61 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Graveyard</title>
 <style>
-  :root { --bg:#07090d; --fg:#d7dde5; --dim:#7d8896; --fresh:#6fcf97; --weathered:#e5c07b; --crumbling:#e06c75; --overdue:#c678dd; --safe:#56b6c2; }
+  :root { --fg:#d7dde5; --dim:#7d8896; --fresh:#6fcf97; --weathered:#e5c07b; --crumbling:#e06c75; --overdue:#c678dd; --safe:#56b6c2; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
-  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--fg); font:13px/1.45 ui-monospace,Menlo,Consolas,monospace; }
-
-  /* sky */
-  .sky { position:fixed; inset:0; background:
-      radial-gradient(ellipse 60% 40% at 78% 14%, rgba(150,170,210,.18), transparent 70%),
-      linear-gradient(#0b1020 0%, #0d1522 38%, #0a0f16 62%, #07090d 100%); }
-  .stars { position:fixed; inset:0; background-image:
-      radial-gradient(1px 1px at 12% 18%, #fff8, transparent), radial-gradient(1px 1px at 33% 9%, #fff6, transparent),
-      radial-gradient(1.5px 1.5px at 52% 22%, #fff9, transparent), radial-gradient(1px 1px at 66% 12%, #fff7, transparent),
-      radial-gradient(1px 1px at 88% 30%, #fff6, transparent), radial-gradient(1px 1px at 22% 34%, #fff5, transparent),
-      radial-gradient(1px 1px at 92% 8%, #fff8, transparent), radial-gradient(1px 1px at 5% 6%, #fff6, transparent); }
-  .moon { position:fixed; right:14%; top:9%; width:74px; height:74px; border-radius:50%;
-      background:radial-gradient(circle at 35% 35%, #fbfdff, #b9c6dc 70%); box-shadow:0 0 70px 26px rgba(160,185,235,.28); }
-  .fog { position:fixed; left:0; right:0; top:34%; height:30%; pointer-events:none;
-      background:linear-gradient(transparent, rgba(120,140,170,.10) 50%, transparent); }
-
-  /* stage */
-  .stage { position:fixed; inset:0; perspective:1100px; perspective-origin:50% 38%; cursor:grab; touch-action:none; }
-  .stage.drag { cursor:grabbing; }
-  .world { position:absolute; left:50%; top:62%; width:0; height:0; transform-style:preserve-3d;
-      transform:translateZ(var(--zoom)) rotateX(calc(var(--pitch) * -1deg)) rotateY(calc(var(--yaw) * 1deg)); }
-  .ground { position:absolute; transform:rotateX(90deg); border-radius:50%;
-      background:
-        radial-gradient(circle, rgba(0,0,0,0) 38%, #07090d 72%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 60px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 60px),
-        radial-gradient(circle, #1c2a22, #101a16 70%); }
-
-  .stone { position:absolute; width:110px; height:150px; transform-style:preserve-3d; cursor:pointer; }
-  .body { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .25s ease; }
-  .stone:hover .body { transform:translateY(-8px); }
-  .layer { position:absolute; inset:0; border-radius:55px 55px 3px 3px; backface-visibility:visible; }
-  .front { display:flex; flex-direction:column; align-items:center; padding:30px 12px 0; text-align:center; color:#aab4c0; text-shadow:0 1px 0 #0b0e12; overflow:hidden; }
-  .front svg.glyph { width:34px; height:34px; flex:none; opacity:.9; }
-  .front .t { margin-top:8px; font-size:11px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
-  .front .a { margin-top:auto; margin-bottom:12px; font-size:10px; opacity:.75; }
-  .cracks { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-  .base { position:absolute; left:-18px; right:-18px; top:125px; height:50px; transform:rotateX(90deg); border-radius:50%; opacity:.75; }
-  .stone.sel .body { filter:brightness(1.35); transform:translateY(-12px); }
-
-  .ghost .body { transform-origin:50% 100%; transform:rotateY(calc(var(--yaw) * -1deg)) rotateX(calc(var(--pitch) * 1deg)); animation:bob 4s ease-in-out infinite; transition:none; }
-  .ghost:hover .body { transform:rotateY(calc(var(--yaw) * -1deg)) rotateX(calc(var(--pitch) * 1deg)); }
-  .ghost.sel .body { filter:brightness(1.25); }
-  .gfig { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; }
-  .gfig svg { width:92px; height:100px; margin-top:6px; filter:drop-shadow(0 0 14px rgba(190,215,255,.55)); }
-  .gfig .t { margin-top:2px; font-size:10px; color:#cfdcf0; text-align:center; max-width:130px; text-shadow:0 0 6px #000, 0 0 3px #000; }
-  @keyframes bob { 50% { margin-top:-8px; } }
-
-  .stone.overdue .body { transform:rotateZ(5deg); }
-  .stone.overdue:hover .body { transform:rotateZ(5deg) translateY(-8px); }
-
-  /* hud */
+  html, body { margin:0; height:100%; overflow:hidden; background:#05070b; color:var(--fg); font:13px/1.45 ui-monospace,Menlo,Consolas,monospace; }
+  canvas#scene { position:fixed; inset:0; width:100%; height:100%; display:block; outline:none; }
   .hud { position:fixed; left:0; right:0; top:0; padding:18px 24px; display:flex; gap:20px; align-items:flex-start; justify-content:space-between; pointer-events:none; }
   .hud > * { pointer-events:auto; }
   h1 { margin:0; font-size:22px; letter-spacing:.14em; text-shadow:0 0 18px rgba(160,185,235,.45); }
@@ -70,10 +20,10 @@
   .hint { position:fixed; left:24px; bottom:18px; color:var(--dim); display:flex; gap:12px; align-items:center; }
   .legend { position:fixed; left:24px; bottom:52px; display:flex; gap:14px; color:var(--dim); font-size:12px; }
   .legend i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
-
+  .tip { position:fixed; pointer-events:none; background:rgba(10,14,20,.9); border:1px solid #2b3442; border-radius:6px; padding:4px 9px; font-size:12px; transform:translate(12px, 12px); max-width:300px; }
   .panel { position:fixed; right:18px; top:78px; bottom:18px; width:min(340px, 90vw); background:rgba(14,19,27,.88); border:1px solid #263041; border-radius:12px; padding:18px; overflow:auto; backdrop-filter:blur(8px); transform:translateX(120%); transition:transform .25s ease; }
   .panel.open { transform:none; }
-  .panel h2 { margin:0 0 8px; font-size:15px; word-break:break-word; }
+  .panel h2 { margin:0 0 8px; font-size:15px; word-break:break-word; padding-right:20px; }
   .pill { display:inline-block; font-size:11px; padding:1px 9px; border-radius:999px; border:1px solid currentColor; margin-bottom:10px; }
   .fresh{color:var(--fresh)} .weathered{color:var(--weathered)} .crumbling{color:var(--crumbling)} .overdue{color:var(--overdue)} .safe{color:var(--safe)}
   .row { color:var(--dim); margin:3px 0; word-break:break-word; } .row b { color:var(--fg); font-weight:400; }
@@ -82,14 +32,15 @@
   button.raise { margin-top:16px; width:100%; background:#22303f; color:var(--fg); border:1px solid #3a4b60; border-radius:8px; padding:10px; cursor:pointer; font:inherit; }
   button.raise:hover { background:#2a3b4e; } button.raise:disabled { opacity:.5; cursor:default; }
   .done { margin-top:12px; color:var(--fresh); word-break:break-all; } .err { margin-top:12px; color:var(--crumbling); }
-  .empty { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dim); pointer-events:none; }
-
-  @media (prefers-reduced-motion: reduce) { .ghost .body { animation:none; } .body, .panel { transition:none; } }
+  .center { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dim); pointer-events:none; text-align:center; padding:20px; }
+  @media (prefers-reduced-motion: reduce) { .panel { transition:none; } }
 </style>
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
 </head>
 <body>
-<div class="sky"></div><div class="stars"></div><div class="moon"></div><div class="fog"></div>
-<div class="stage" id="stage"><div class="world" id="world"></div></div>
+<canvas id="scene" tabindex="0"></canvas>
 <div class="hud">
   <div><h1>GRAVEYARD</h1><div class="repo" id="repo">reading the crypt...</div></div>
   <div class="tabs" id="tabs"></div>
@@ -98,27 +49,30 @@
   <span><i style="background:var(--fresh)"></i>fresh</span><span><i style="background:var(--weathered)"></i>weathered</span>
   <span><i style="background:var(--crumbling)"></i>crumbling</span><span><i style="background:var(--overdue)"></i>overdue</span><span><i style="background:var(--safe)"></i>ward</span>
 </div>
-<div class="hint ctl"><span>drag: turn | wheel: zoom | arrows: turn | click a stone</span><button id="reset">reset view</button></div>
+<div class="hint ctl"><span>drag: orbit | right-drag: pan | wheel: zoom | click a grave</span><button id="reset">reset view</button></div>
+<div class="tip" id="tip" hidden></div>
 <aside class="panel" id="panel"></aside>
-<div class="empty" id="empty" hidden>Nothing here. The graveyard is quiet.</div>
+<div class="center" id="empty" hidden>Nothing here. The graveyard is quiet.</div>
+<div class="center" id="nogl" hidden>This browser could not start WebGL. Try another browser, or run "graveyard" in the terminal for the text list.</div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 const TOKEN = '__TOKEN__';
 const KINDS = ['all', 'commit', 'stash', 'ghost', 'ward'];
 const LABEL = { commit:'lost commits', stash:'stashes', ghost:'ghosts', ward:'wards', all:'all' };
-const COLOR = { fresh:'#6fcf97', weathered:'#e5c07b', crumbling:'#e06c75', overdue:'#c678dd', safe:'#56b6c2' };
-const STONE = { fresh:[78,90,104], weathered:[70,78,88], crumbling:[58,62,70], overdue:[40,42,50], safe:[34,70,78] };
+const HEALTH_COLOR = { fresh:0x6fcf97, weathered:0xe5c07b, crumbling:0xe06c75, overdue:0xc678dd, safe:0x56b6c2 };
+const STONE_COLOR = { fresh:0xa9b3bf, weathered:0x939aa3, crumbling:0x7a7f86, overdue:0x5a5c62, safe:0x58a6b0 };
 const CRACKS = { fresh:0, weathered:1, crumbling:3, overdue:5, safe:0 };
-const CRACK_D = ['M24 150 L34 118 L22 98', 'M92 78 L76 98 L90 126', 'M50 42 L60 62 L52 78', 'M70 150 L64 128 L76 112', 'M14 80 L30 88 L26 100'];
 const DAY = 864e5;
-const view = { yaw:-18, pitch:38, zoom:-120 };
-const DEF = { ...view };
-let data = null, tab = 'all', selected = null;
-
-const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); for (const k of kids) e.append(k); return e; };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); for (const k of kids) e.append(k); return e; };
 const hash = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
-const rnd = (seed, n) => ((hash(seed + n) % 2000) / 1000) - 1; // -1..1
+const rnd = (seed, n) => ((hash(seed + ':' + n) % 2000) / 1000) - 1;
+
+let data = null, tab = 'all', selected = null;
 
 function ago(ms) {
   const d = Math.max(0, data.now - ms);
@@ -133,104 +87,413 @@ function left(t) {
   if (r <= 0) return 'git may delete it any time';
   return r < DAY ? Math.max(1, Math.floor(r / 36e5)) + 'h left' : Math.floor(r / DAY) + 'd left';
 }
-const short = (t) => (t.deadline == null ? 'safe' : left(t));
 
-const GLYPH = {
-  commit:'<svg class="glyph" viewBox="0 0 34 34"><path d="M17 4 V30 M8 12 H26" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/></svg>',
-  stash:'<svg class="glyph" viewBox="0 0 34 34"><rect x="5" y="8" width="24" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><path d="M5 15 H29" stroke="currentColor" stroke-width="3"/></svg>',
-  ward:'<svg class="glyph" viewBox="0 0 34 34"><path d="M17 3 L29 8 V17 C29 24 23 29 17 32 C11 29 5 24 5 17 V8 Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M11 17 l5 5 l9 -10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
-};
-const GHOST_SVG = '<svg viewBox="0 0 92 100"><path d="M10 96 V44 a36 36 0 0 1 72 0 V96 l-12 -11 l-12 11 l-12 -11 l-12 11 l-12 -11 z" fill="#cfd9e8" opacity=".85"/><circle cx="33" cy="44" r="6" fill="#0b1020"/><circle cx="59" cy="44" r="6" fill="#0b1020"/><ellipse cx="46" cy="64" rx="7" ry="9" fill="#0b1020"/></svg>';
+/* ---------- renderer, scene, camera ---------- */
+const canvas = $('scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+} catch (e) {
+  $('nogl').hidden = false;
+  throw e;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.45;
 
-function shade(rgb, k) { return 'rgb(' + rgb.map((v) => Math.round(v * k)).join(',') + ')'; }
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0f1828, 0.032);
 
-function makeStone(t, x, z) {
-  const s = el('div', { className:'stone ' + t.kind + ' ' + t.health });
-  const jy = rnd(t.id, 'y') * 10, jx = rnd(t.id, 'x') * 18, jz = rnd(t.id, 'z') * 18, jr = rnd(t.id, 'r') * 2;
-  s.style.transform = 'translate3d(' + (x - 55 + jx) + 'px,-150px,' + (z + jz) + 'px) rotateY(' + jy + 'deg) rotateZ(' + jr + 'deg)';
-  s.dataset.id = t.id;
-  const body = el('div', { className:'body' });
-  const rgb = STONE[t.health] || STONE.fresh;
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 300);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.minDistance = 3;
+controls.maxDistance = 40;
+controls.autoRotate = !reduceMotion;
+controls.autoRotateSpeed = 0.35;
+canvas.addEventListener('pointerdown', () => { controls.autoRotate = false; });
 
-  if (t.kind === 'ghost') {
-    const g = el('div', { className:'gfig' });
-    g.innerHTML = GHOST_SVG;
-    g.append(el('div', { className:'t', textContent: t.guess ? t.guess.path : 'nameless' }));
-    body.append(g);
-  } else {
-    for (let i = 0; i < 8; i++) {
-      const L = el('div', { className:'layer' });
-      L.style.transform = 'translateZ(' + ((i - 3.5) * 3.6) + 'px)';
-      L.style.background = i === 7 ? 'linear-gradient(160deg,' + shade(rgb, 1.25) + ',' + shade(rgb, .9) + ')' : shade(rgb, 0.55 + i * 0.03);
-      if (i === 7) {
-        L.classList.add('front');
-        L.style.boxShadow = 'inset 0 0 0 2px rgba(0,0,0,.25), inset 0 0 24px rgba(0,0,0,.35)';
-        L.innerHTML = GLYPH[t.kind] || GLYPH.commit;
-        L.append(el('div', { className:'t', textContent:t.title }), el('div', { className:'a', textContent:short(t) }));
-        const n = CRACKS[t.health] || 0;
-        if (n) {
-          const c = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          c.setAttribute('class', 'cracks'); c.setAttribute('viewBox', '0 0 110 150');
-          for (let k = 0; k < n; k++) {
-            const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            p.setAttribute('d', CRACK_D[k]); p.setAttribute('fill', 'none'); p.setAttribute('stroke', '#0a0d11'); p.setAttribute('stroke-width', '2.4');
-            c.append(p);
-          }
-          L.append(c);
-        }
-      }
-      body.append(L);
-    }
+/* sky dome: vertical gradient */
+{
+  const g = new THREE.SphereGeometry(150, 32, 16);
+  const m = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite:false, fog:false,
+    uniforms: { top:{ value:new THREE.Color(0x0a1230) }, mid:{ value:new THREE.Color(0x15203a) }, bot:{ value:new THREE.Color(0x0b1220) } },
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; varying vec3 vP; void main(){ float h = vP.y; vec3 c = h > 0.08 ? mix(mid, top, smoothstep(0.08, 0.7, h)) : mix(bot, mid, smoothstep(-0.1, 0.08, h)); gl_FragColor = vec4(c, 1.); }',
+  });
+  scene.add(new THREE.Mesh(g, m));
+}
+
+/* stars */
+{
+  const n = 900, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const th = Math.random() * Math.PI * 2, ph = Math.acos(Math.random() * 0.9 + 0.1);
+    pos.set([Math.sin(ph) * Math.cos(th) * 140, Math.cos(ph) * 140, Math.sin(ph) * Math.sin(th) * 140], i * 3);
   }
-  s.append(body);
-  const base = el('div', { className:'base' });
-  base.style.background = 'radial-gradient(ellipse, ' + (COLOR[t.health] || '#6fcf97') + '66, transparent 68%)';
-  s.append(base);
-  s.addEventListener('click', () => { if (!moved) select(t, s); });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color:0xdfe8ff, size:0.6, sizeAttenuation:true, fog:false, transparent:true, opacity:0.85 })));
+}
+
+/* moon + moonlight */
+// the moon you see sits low behind the graves; the light that casts shadows comes from higher up
+const MOON_DIR = new THREE.Vector3(-0.42, 0.13, -1).normalize();
+const LIGHT_DIR = new THREE.Vector3(-0.5, 0.75, -0.45).normalize();
+{
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 16), new THREE.MeshBasicMaterial({ color:0xf3f7ff, fog:false }));
+  moon.position.copy(MOON_DIR).multiplyScalar(120);
+  scene.add(moon);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map:glowTexture('rgba(170,195,255,0.55)'), fog:false, depthWrite:false, transparent:true, blending:THREE.AdditiveBlending }));
+  halo.scale.set(40, 40, 1); halo.position.copy(moon.position);
+  scene.add(halo);
+}
+scene.add(new THREE.HemisphereLight(0x9fb4e0, 0x18241b, 1.0));
+const fill = new THREE.DirectionalLight(0x9db0d8, 0.9); // soft front light so the engravings read
+fill.position.set(6, 9, 14); scene.add(fill);
+const moonLight = new THREE.DirectionalLight(0xc8d6ff, 1.6);
+moonLight.position.copy(LIGHT_DIR).multiplyScalar(30);
+moonLight.castShadow = true;
+moonLight.shadow.mapSize.set(2048, 2048);
+moonLight.shadow.bias = -0.0008;
+moonLight.shadow.normalBias = 0.02;
+scene.add(moonLight);
+
+/* ground with gentle bumps */
+{
+  const g = new THREE.CircleGeometry(60, 120);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), r = Math.hypot(x, y);
+    const h = r < 9 ? 0 : (Math.sin(x * 0.35) * Math.cos(y * 0.3) * 0.35 + Math.sin(x * 0.11 + y * 0.07) * 0.8) * Math.min(1, (r - 9) / 10);
+    p.setZ(i, h);
+  }
+  g.computeVertexNormals();
+  const ground = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color:0x1d2b22, roughness:1, map:grassTexture() }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+}
+
+/* dead trees and a fence ring, for mood */
+const bark = new THREE.MeshStandardMaterial({ color:0x1b1712, roughness:1 });
+function deadTree(x, z, s) {
+  const t = new THREE.Group();
+  const branch = (len, rad, depth) => {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rad * 0.6, rad, len, 6), bark);
+    m.position.y = len / 2; m.castShadow = true; g.add(m);
+    if (depth > 0) for (let i = 0; i < 2 + (depth > 1 ? 1 : 0); i++) {
+      const c = branch(len * 0.68, rad * 0.62, depth - 1);
+      c.position.y = len * (0.65 + i * 0.12);
+      c.rotation.z = (i % 2 ? 1 : -1) * (0.5 + Math.random() * 0.35);
+      c.rotation.y = Math.random() * Math.PI * 2;
+      g.add(c);
+    }
+    return g;
+  };
+  t.add(branch(2.4 * s, 0.16 * s, 3));
+  t.position.set(x, 0, z);
+  scene.add(t);
+}
+deadTree(-11, -8, 1.2); deadTree(12, -10, 1); deadTree(-14, 9, 0.9); deadTree(15, 7, 1.1);
+
+const fence = new THREE.MeshStandardMaterial({ color:0x15181d, roughness:0.6, metalness:0.6 });
+let fenceGroup = null;
+function buildFence(radius) {
+  if (fenceGroup) scene.remove(fenceGroup);
+  fenceGroup = new THREE.Group();
+  const n = Math.round(radius * 5);
+  const bar = new THREE.CylinderGeometry(0.03, 0.03, 1.1, 5);
+  const tip = new THREE.ConeGeometry(0.06, 0.16, 5);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    if (Math.abs(Math.sin(a / 2 - Math.PI / 4)) < 0.035) continue; // a gate gap
+    const b = new THREE.Mesh(bar, fence); b.position.set(Math.cos(a) * radius, 0.55, Math.sin(a) * radius); b.castShadow = true;
+    const t = new THREE.Mesh(tip, fence); t.position.set(b.position.x, 1.18, b.position.z);
+    fenceGroup.add(b, t);
+  }
+  for (const y of [0.3, 0.9]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.025, 4, 160), fence);
+    ring.rotation.x = Math.PI / 2; ring.position.y = y; fenceGroup.add(ring);
+  }
+  scene.add(fenceGroup);
+}
+
+/* fireflies */
+const fireflies = (() => {
+  const n = 70, pos = new Float32Array(n * 3), seed = [];
+  for (let i = 0; i < n; i++) { seed.push([Math.random() * 30 - 15, Math.random() * 2 + 0.3, Math.random() * 30 - 15, Math.random() * 10]); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(g, new THREE.PointsMaterial({ map:glowTexture('rgba(220,255,170,1)'), color:0xd9ff9a, size:0.35, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+  scene.add(pts);
+  return { update(t) {
+    for (let i = 0; i < n; i++) { const s = seed[i]; pos.set([s[0] + Math.sin(t * 0.3 + s[3]) * 1.5, s[1] + Math.sin(t * 0.9 + s[3]) * 0.3, s[2] + Math.cos(t * 0.25 + s[3]) * 1.5], i * 3); }
+    g.attributes.position.needsUpdate = true;
+  } };
+})();
+
+/* ---------- textures ---------- */
+function glowTexture(color) {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, color); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function grassTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2a3b2e'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 5000; i++) {
+    const v = 30 + Math.random() * 40;
+    x.fillStyle = `rgb(${v * 0.7 | 0},${v | 0},${v * 0.75 | 0})`;
+    x.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 2, 1 + Math.random() * 3);
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(24, 24); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function stoneTexture(seed) {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 900; i++) {
+    const v = 200 + ((hash(seed + i) % 55));
+    x.fillStyle = `rgb(${v},${v},${v})`;
+    x.fillRect(hash(seed + 'x' + i) % 128, hash(seed + 'y' + i) % 128, 2, 2);
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+function wrap(ctx, text, maxW, maxLines) {
+  const words = String(text).split(/\s+/); const out = []; let line = '';
+  for (const w of words) {
+    const tryL = line ? line + ' ' + w : w;
+    if (ctx.measureText(tryL).width > maxW && line) { out.push(line); line = w; } else line = tryL;
+    if (out.length === maxLines) break;
+  }
+  if (out.length < maxLines && line) out.push(line);
+  if (out.length === maxLines && words.join(' ').length > out.join(' ').length) out[maxLines - 1] = out[maxLines - 1].replace(/.{0,2}$/, '..');
+  return out;
+}
+
+/* engraving on the stone face: transparent canvas, dark carved text and cracks */
+function faceTexture(t) {
+  const W = 320, H = 440;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const ink = t.kind === 'ward' ? 'rgba(10,30,34,0.85)' : 'rgba(18,22,28,0.82)';
+  const hi = 'rgba(255,255,255,0.18)';
+  const carve = (fn) => { x.save(); x.translate(0, 2); x.fillStyle = hi; x.strokeStyle = hi; fn(); x.restore(); x.fillStyle = ink; x.strokeStyle = ink; fn(); };
+  x.lineCap = 'round'; x.lineJoin = 'round';
+
+  carve(() => {
+    x.lineWidth = 9;
+    x.beginPath();
+    if (t.kind === 'stash') { x.strokeRect(118, 60, 84, 66); x.moveTo(118, 88); x.lineTo(202, 88); }
+    else if (t.kind === 'ward') { x.moveTo(160, 48); x.lineTo(212, 66); x.lineTo(212, 102); x.quadraticCurveTo(212, 136, 160, 156); x.quadraticCurveTo(108, 136, 108, 102); x.lineTo(108, 66); x.closePath(); x.moveTo(136, 102); x.lineTo(154, 120); x.lineTo(186, 86); }
+    else { x.moveTo(160, 46); x.lineTo(160, 150); x.moveTo(124, 80); x.lineTo(196, 80); }
+    x.stroke();
+  });
+  carve(() => {
+    x.font = 'bold 30px ui-monospace, Menlo, monospace'; x.textAlign = 'center';
+    wrap(x, t.title, 260, 3).forEach((l, i) => x.fillText(l, 160, 214 + i * 38));
+    x.font = '22px ui-monospace, Menlo, monospace';
+    x.fillText(t.kind === 'ward' ? 'saved ' + ago(t.died) : 'died ' + ago(t.died), 160, 350);
+    x.font = 'bold 24px ui-monospace, Menlo, monospace';
+    x.fillText(t.kind === 'ward' ? 'safe' : left(t), 160, 390);
+  });
+  const n = CRACKS[t.health] || 0;
+  const cracks = [[[40, 440], [70, 360], [44, 300], [60, 250]], [[300, 200], [250, 250], [290, 320], [270, 380]], [[130, 0], [160, 60], [140, 110]], [[220, 440], [205, 380], [235, 330]], [[0, 230], [60, 250], [50, 290]]];
+  x.strokeStyle = 'rgba(5,6,8,0.95)'; x.lineWidth = 5;
+  for (let i = 0; i < n; i++) {
+    x.beginPath(); cracks[i].forEach(([px, py], k) => (k ? x.lineTo(px, py) : x.moveTo(px, py))); x.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  return tex;
+}
+
+function labelSprite(text, color = '#e8f0ff') {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 96;
+  const x = c.getContext('2d');
+  x.font = 'bold 40px ui-monospace, Menlo, monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.shadowColor = 'rgba(0,0,0,0.9)'; x.shadowBlur = 10; x.fillStyle = color;
+  x.fillText(text.length > 22 ? text.slice(0, 21) + '..' : text, 256, 48);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthWrite:false }));
+  s.scale.set(2.4, 0.45, 1);
   return s;
 }
 
-function renderWorld() {
+/* ---------- graves ---------- */
+const STONE_W = 1.0, STONE_H = 1.45, STONE_D = 0.2;
+const stoneGeom = (() => {
+  const r = STONE_W / 2, s = new THREE.Shape();
+  s.moveTo(-r, 0); s.lineTo(-r, STONE_H - r); s.absarc(0, STONE_H - r, r, Math.PI, 0, true); s.lineTo(r, 0); s.lineTo(-r, 0);
+  const g = new THREE.ExtrudeGeometry(s, { depth:STONE_D, bevelEnabled:true, bevelThickness:0.035, bevelSize:0.035, bevelSegments:3, curveSegments:24 });
+  g.translate(0, 0, -STONE_D / 2);
+  return g;
+})();
+const faceGeom = (() => {
+  const g = new THREE.PlaneGeometry(STONE_W * 0.96, STONE_H * 0.96 * (440 / 440));
+  g.translate(0, STONE_H * 0.5, STONE_D / 2 + 0.036);
+  return g;
+})();
+const plinthGeom = new THREE.BoxGeometry(1.35, 0.16, 0.5);
+const moundGeom = (() => { const g = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(0.62, 0.16, 1.05); return g; })();
+const dirt = new THREE.MeshStandardMaterial({ color:0x1e1812, roughness:1 });
+
+function makeGrave(t, withLight) {
+  const g = new THREE.Group();
+  const tex = stoneTexture(t.id); tex.repeat.set(2, 2);
+  const mat = new THREE.MeshStandardMaterial({ color:STONE_COLOR[t.health] ?? STONE_COLOR.fresh, roughness:0.92, metalness:0.02, map:tex,
+    emissive:t.kind === 'ward' ? 0x0d3a40 : 0x000000 });
+  const stone = new THREE.Mesh(stoneGeom, mat); stone.castShadow = stone.receiveShadow = true;
+  const face = new THREE.Mesh(faceGeom, new THREE.MeshStandardMaterial({ map:faceTexture(t), transparent:true, roughness:1, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2 }));
+  const body = new THREE.Group(); body.add(stone, face);
+  body.position.y = 0.12;
+  // decay: crumbling stones lean, overdue ones sink and tilt hard
+  const lean = { fresh:0, weathered:0.03, crumbling:0.09, overdue:0.2, safe:0 }[t.health] || 0;
+  body.rotation.z = lean * (rnd(t.id, 'l') > 0 ? 1 : -1);
+  body.rotation.x = -lean * 0.6;
+  if (t.health === 'overdue') body.position.y = -0.18;
+  g.add(body);
+
+  const plinth = new THREE.Mesh(plinthGeom, mat); plinth.position.y = 0.06; plinth.castShadow = plinth.receiveShadow = true;
+  g.add(plinth);
+  if (t.kind !== 'ward') { const m = new THREE.Mesh(moundGeom, dirt); m.position.set(0, 0, 1.0); m.receiveShadow = true; g.add(m); }
+
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(1.1, 32), new THREE.MeshBasicMaterial({ map:glowTexture('rgba(255,255,255,0.9)'), color:HEALTH_COLOR[t.health] ?? 0x6fcf97, transparent:true, opacity:0.32, depthWrite:false, blending:THREE.AdditiveBlending }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.02; glow.position.z = 0.35;
+  g.add(glow);
+
+  if (t.kind === 'ward' && withLight) {
+    const l = new THREE.PointLight(0x56b6c2, 1.6, 4, 2); l.position.set(0, 1.1, 0.7); g.add(l);
+  }
+  g.userData = { tomb:t, body, glow, mats:[mat], baseY:body.position.y, emissive:t.kind === 'ward' ? 0x0d3a40 : 0x000000 };
+  return g;
+}
+
+const ghostGeom = (() => {
+  // profile from the wavy hem up to the top of the head (x = radius, y = height)
+  const pts = [new THREE.Vector2(0.5, 0.1), new THREE.Vector2(0.45, 0.95)];
+  for (let i = 1; i <= 16; i++) { const a = (i / 16) * Math.PI / 2; pts.push(new THREE.Vector2(Math.cos(a) * 0.45, 0.95 + Math.sin(a) * 0.45)); }
+  const g = new THREE.LatheGeometry(pts, 40);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    if (p.getY(i) < 0.15) { const a = Math.atan2(p.getZ(i), p.getX(i)); p.setY(i, 0.1 + Math.sin(a * 7) * 0.08); }
+  }
+  g.computeVertexNormals();
+  return g;
+})();
+const eyeGeom = new THREE.SphereGeometry(0.07, 12, 8);
+const eyeMat = new THREE.MeshBasicMaterial({ color:0x05070b });
+
+function makeGhost(t, withLight) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color:0xdfe8f5, emissive:0x8aa0c8, emissiveIntensity:0.55, roughness:0.4, transparent:true, opacity:0.82, side:THREE.DoubleSide });
+  const fig = new THREE.Group();
+  const body = new THREE.Mesh(ghostGeom, mat); body.castShadow = true;
+  const e1 = new THREE.Mesh(eyeGeom, eyeMat); e1.position.set(-0.15, 1.02, 0.4);
+  const e2 = e1.clone(); e2.position.x = 0.15;
+  const mouth = new THREE.Mesh(eyeGeom, eyeMat); mouth.scale.set(0.9, 1.3, 0.5); mouth.position.set(0, 0.78, 0.43);
+  fig.add(body, e1, e2, mouth);
+  fig.position.y = 0.35;
+  g.add(fig);
+  const label = labelSprite(t.guess ? t.guess.path : 'nameless', t.guess ? '#e8f0ff' : '#9aa6b6');
+  label.position.y = 2.05; g.add(label);
+  if (withLight) { const l = new THREE.PointLight(0x9fb8ff, 1.2, 3.5, 2); l.position.y = 1.1; g.add(l); }
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.9, 32), new THREE.MeshBasicMaterial({ map:glowTexture('rgba(255,255,255,0.9)'), color:0x9fb8ff, transparent:true, opacity:0.35, depthWrite:false, blending:THREE.AdditiveBlending }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.02; g.add(glow);
+  g.userData = { tomb:t, body:fig, glow, mats:[mat], baseY:fig.position.y, ghost:true, phase:rnd(t.id, 'p') * 3 };
+  return g;
+}
+
+let graves = new THREE.Group();
+scene.add(graves);
+let pickables = [];
+
+function buildGraves() {
+  scene.remove(graves);
+  graves.traverse((o) => { if (o.material?.map) o.material.map.dispose(); });
+  graves = new THREE.Group(); pickables = [];
   const list = data.tombstones.filter((t) => tab === 'all' || t.kind === tab);
   $('empty').hidden = list.length > 0;
-  const cols = Math.max(1, Math.ceil(Math.sqrt(list.length * 1.4)));
-  const rows = Math.ceil(list.length / cols) || 1;
-  const gap = 190;
-  const size = Math.max(cols, rows) * gap + 700;
-  const ground = el('div', { className:'ground' });
-  Object.assign(ground.style, { width:size + 'px', height:size + 'px', left:(-size / 2) + 'px', top:(-size / 2) + 'px' });
-  const nodes = [ground];
+  const cols = Math.max(1, Math.ceil(Math.sqrt(list.length * 1.3)));
+  const rows = Math.max(1, Math.ceil(list.length / cols));
+  const gx = 2.3, gz = 2.9;
+  let lights = 0;
   list.forEach((t, i) => {
     const c = i % cols, r = Math.floor(i / cols);
-    const s = makeStone(t, (c - (cols - 1) / 2) * gap, (r - (rows - 1) / 2) * gap);
-    if (selected === t.id) s.classList.add('sel');
-    nodes.push(s);
+    // point lights are costly per pixel, so only the first few ghosts and wards get one
+    const withLight = (t.kind === 'ghost' || t.kind === 'ward') && lights++ < 8;
+    const o = t.kind === 'ghost' ? makeGhost(t, withLight) : makeGrave(t, withLight);
+    o.position.set((c - (cols - 1) / 2) * gx + rnd(t.id, 'x') * 0.35, 0, (r - (rows - 1) / 2) * gz + rnd(t.id, 'z') * 0.35);
+    o.rotation.y = rnd(t.id, 'y') * 0.18;
+    graves.add(o); pickables.push(o);
   });
-  $('world').replaceChildren(...nodes);
+  scene.add(graves);
+  const radius = Math.max(6, Math.hypot(cols * gx, rows * gz) / 2 + 2.5);
+  buildFence(radius);
+  const sc = moonLight.shadow.camera; const R = radius + 3;
+  sc.left = -R; sc.right = R; sc.top = R; sc.bottom = -R; sc.near = 1; sc.far = 80; sc.updateProjectionMatrix();
+  frame(radius);
+  if (selected && !list.some((t) => t.id === selected)) closePanel();
 }
 
-function renderTabs() {
-  $('tabs').replaceChildren(...KINDS.map((k) => {
-    const n = k === 'all' ? data.tombstones.length : data.tombstones.filter((t) => t.kind === k).length;
-    const b = el('button', { textContent:LABEL[k] + ' ' + n, className:k === tab ? 'on' : '' });
-    b.onclick = () => { tab = k; renderTabs(); renderWorld(); };
-    return b;
-  }));
+const home = { pos:new THREE.Vector3(), target:new THREE.Vector3(0, 0.7, 0) };
+function frame(radius) {
+  const d = Math.max(7, radius * 1.55);
+  home.pos.set(d * 0.3, d * 0.36, d * 0.95);
+  camera.position.copy(home.pos); controls.target.copy(home.target); controls.update();
 }
+$('reset').onclick = () => { camera.position.copy(home.pos); controls.target.copy(home.target); controls.update(); };
 
-function select(t, node) {
-  document.querySelectorAll('.stone.sel').forEach((n) => n.classList.remove('sel'));
-  node.classList.add('sel');
+/* ---------- picking ---------- */
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let hovered = null, downAt = null;
+function pick(e) {
+  const r = canvas.getBoundingClientRect();
+  mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(pickables, true).find((h) => h.object.type === 'Mesh');
+  let o = hit?.object; while (o && !o.userData.tomb) o = o.parent;
+  return o || null;
+}
+canvas.addEventListener('pointermove', (e) => {
+  const o = pick(e);
+  if (o !== hovered) { hovered = o; canvas.style.cursor = o ? 'pointer' : ''; }
+  const tip = $('tip');
+  if (o) { tip.hidden = false; tip.textContent = o.userData.tomb.title; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
+  else tip.hidden = true;
+});
+canvas.addEventListener('pointerleave', () => { $('tip').hidden = true; hovered = null; });
+canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  const o = pick(e);
+  if (o) openPanel(o.userData.tomb);
+});
+
+/* ---------- side panel ---------- */
+function closePanel() { $('panel').classList.remove('open'); selected = null; }
+function openPanel(t) {
   selected = t.id;
   const p = $('panel');
   const row = (k, v) => el('div', { className:'row' }, k + ' ', el('b', { textContent:v }));
   const close = el('button', { className:'close', textContent:'x', title:'close' });
-  close.onclick = () => { p.classList.remove('open'); node.classList.remove('sel'); selected = null; };
+  close.onclick = closePanel;
   const kids = [close, el('h2', { textContent:t.title }),
     el('span', { className:'pill ' + t.health, textContent: t.kind === 'ward' ? 'safe snapshot' : t.health + ', ' + left(t) })];
+  kids.push(row('kind', LABEL[t.kind].replace(/s$/, '')));
   kids.push(row(t.kind === 'ward' ? 'saved' : 'died', ago(t.died)));
   if (t.killer) kids.push(row('killed by', t.killer));
   if (t.kind === 'commit' && t.commits > 1) kids.push(row('size', t.commits + ' commits'));
+  if (t.author) kids.push(row('author', t.author));
   if (t.kind === 'ghost') {
     kids.push(row('size', t.size + ' bytes'));
     kids.push(row('seance', t.guess ? 'looks like ' + t.guess.path + ' (' + t.guess.score + '%)' : 'nameless'));
@@ -238,8 +501,8 @@ function select(t, node) {
   kids.push(row('id', t.id));
   if (t.files && t.files.length) {
     const ul = el('ul', { className:'files' });
-    for (const f of t.files.slice(0, 8)) ul.append(el('li', { textContent:f }));
-    if (t.files.length > 8) ul.append(el('li', { textContent:'+ ' + (t.files.length - 8) + ' more' }));
+    for (const f of t.files.slice(0, 10)) ul.append(el('li', { textContent:f }));
+    if (t.files.length > 10) ul.append(el('li', { textContent:'+ ' + (t.files.length - 10) + ' more' }));
     kids.push(ul);
   }
   const b = el('button', { className:'raise', textContent:'Raise on a new branch' });
@@ -252,6 +515,8 @@ function select(t, node) {
       if (!r.ok) throw new Error(j.error);
       out.className = 'done';
       out.textContent = 'Raised on branch ' + j.branch + '. Run: git switch ' + j.branch;
+      const o = pickables.find((x) => x.userData.tomb.id === t.id);
+      if (o) o.userData.risenAt = clock.getElapsedTime();
     } catch (e) { out.className = 'err'; out.textContent = e.message; b.disabled = false; }
   };
   kids.push(b, out);
@@ -259,39 +524,61 @@ function select(t, node) {
   p.classList.add('open');
 }
 
-/* camera */
-function apply() {
-  const w = $('world').style;
-  w.setProperty('--yaw', view.yaw); w.setProperty('--pitch', view.pitch); w.setProperty('--zoom', view.zoom + 'px');
+/* ---------- tabs ---------- */
+function renderTabs() {
+  $('tabs').replaceChildren(...KINDS.map((k) => {
+    const n = k === 'all' ? data.tombstones.length : data.tombstones.filter((t) => t.kind === k).length;
+    const b = el('button', { textContent:LABEL[k] + ' ' + n, className:k === tab ? 'on' : '' });
+    b.onclick = () => { tab = k; renderTabs(); buildGraves(); };
+    return b;
+  }));
 }
-let moved = false, down = null;
-const stage = $('stage');
-stage.addEventListener('pointerdown', (e) => { down = { x:e.clientX, y:e.clientY, yaw:view.yaw, pitch:view.pitch }; moved = false; });
-window.addEventListener('pointermove', (e) => {
-  if (!down) return;
-  const dx = e.clientX - down.x, dy = e.clientY - down.y;
-  if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; stage.classList.add('drag'); }
-  if (!moved) return;
-  view.yaw = down.yaw + dx * 0.3;
-  view.pitch = Math.max(12, Math.min(80, down.pitch + dy * 0.25));
-  apply();
+
+/* ---------- loop ---------- */
+const clock = new THREE.Clock();
+const tmp = new THREE.Vector3();
+function tick() {
+  const t = clock.getElapsedTime();
+  for (const o of pickables) {
+    const u = o.userData, sel = u.tomb.id === selected, hov = o === hovered;
+    const lift = (sel ? 0.16 : hov ? 0.08 : 0);
+    if (u.ghost) {
+      const bob = reduceMotion ? 0 : Math.sin(t * 1.6 + u.phase) * 0.12;
+      u.body.position.y += (u.baseY + bob + lift - u.body.position.y) * 0.15;
+      tmp.set(camera.position.x, o.position.y, camera.position.z);
+      u.body.lookAt(tmp);
+    } else {
+      u.body.position.y += (u.baseY + lift - u.body.position.y) * 0.15;
+    }
+    for (const m of u.mats) {
+      if (u.ghost) m.emissiveIntensity = sel ? 1 : hov ? 0.8 : 0.55;
+      else m.emissive.setHex(sel ? 0x2a3442 : hov ? 0x1a212a : u.emissive);
+    }
+    u.glow.material.opacity = (u.ghost ? 0.35 : 0.32) + (sel ? 0.35 : hov ? 0.15 : 0) + (reduceMotion ? 0 : Math.sin(t * 2 + o.position.x) * 0.04);
+    if (u.risenAt != null) {
+      const k = Math.min(1, (t - u.risenAt) / 1.2);
+      u.glow.material.color.setHex(0xfff2b0); u.glow.scale.setScalar(1 + k * 0.8);
+    }
+  }
+  if (!reduceMotion) fireflies.update(t);
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
 });
-window.addEventListener('pointerup', () => { down = null; stage.classList.remove('drag'); setTimeout(() => { moved = false; }, 0); });
-stage.addEventListener('wheel', (e) => { e.preventDefault(); view.zoom = Math.max(-900, Math.min(500, view.zoom - e.deltaY * 0.6)); apply(); }, { passive:false });
-window.addEventListener('keydown', (e) => {
-  const k = { ArrowLeft:[-6, 0], ArrowRight:[6, 0], ArrowUp:[0, 4], ArrowDown:[0, -4] }[e.key];
-  if (!k) return;
-  view.yaw += k[0]; view.pitch = Math.max(12, Math.min(80, view.pitch + k[1])); apply();
-});
-$('reset').onclick = () => { Object.assign(view, DEF); apply(); };
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 
 async function load() {
   data = await (await fetch('/api/tombs')).json();
   $('repo').textContent = data.repo;
-  renderTabs(); renderWorld(); apply();
+  renderTabs(); buildGraves();
 }
-apply();
-load().catch((e) => { $('repo').textContent = 'error: ' + e.message; });
+load().then(() => { window.__graveyardReady = true; }).catch((e) => { $('repo').textContent = 'error: ' + e.message; });
+tick();
 </script>
 </body>
 </html>

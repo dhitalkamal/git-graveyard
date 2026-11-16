@@ -7,6 +7,7 @@ import { revive } from '../src/revive.js';
 import { snapshot, isDestructive, handleHook, installClaudeHook } from '../src/ward.js';
 import { renderTomb, bold, dim } from '../src/format.js';
 import { startServer } from '../src/server.js';
+import { installShim, uninstallShim, wardCheck, defaultShimDir } from '../src/shim.js';
 import { repoTop } from '../src/git.js';
 
 const HELP = `graveyard: raise the work git lost
@@ -19,6 +20,8 @@ const HELP = `graveyard: raise the work git lost
   graveyard ward hook                       Claude Code PreToolUse hook (reads JSON on stdin)
   graveyard ward install                    add the hook to .claude/settings.json in this repo
   graveyard ward list                       list ward snapshots
+  graveyard ward shim [--dir D]             install a git shim that guards every agent and shell
+  graveyard ward unshim [--dir D]           remove the git shim
 `;
 
 const [cmd = 'scan', ...rest] = process.argv.slice(2);
@@ -76,6 +79,23 @@ try {
       const bin = realpathSync(fileURLToPath(import.meta.url));
       const r = installClaudeHook(process.cwd(), `node ${JSON.stringify(bin)} ward hook`);
       console.log(r.added ? `Ward installed in ${r.file}` : `Ward already installed in ${r.file}`);
+    } else if (sub === 'check') {
+      const r = wardCheck(wargs);
+      if (r) console.error(`graveyard ward: saved ${r.ref} before "git ${wargs.join(' ')}"`);
+    } else if (sub === 'shim' || sub === 'unshim') {
+      const di = wargs.indexOf('--dir');
+      const dir = di >= 0 ? wargs[di + 1] : defaultShimDir();
+      if (sub === 'unshim') {
+        const r = uninstallShim(dir);
+        console.log(r.removed ? `Removed ${r.file}` : `No shim at ${r.file}`);
+      } else {
+        const r = installShim({ dir, bin: realpathSync(fileURLToPath(import.meta.url)) });
+        console.log(`Shim written: ${r.file}\nReal git: ${r.realGit}`);
+        if (!r.onPath) {
+          console.log(`\nTurn it on by putting this first on PATH (add to ~/.zshrc for every shell):\n  export PATH="${r.dir}:$PATH"`);
+          console.log(`Or only for one agent:  PATH="${r.dir}:$PATH" claude`);
+        } else console.log('It is first on PATH and active.');
+      }
     } else if (sub === 'list') {
       const { tombstones } = scan(process.cwd(), { ghosts: false });
       for (const t of tombstones.filter((x) => x.kind === 'ward')) console.log(renderTomb(t) + '\n');

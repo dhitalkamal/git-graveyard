@@ -3,9 +3,21 @@
   "version": "0.1.0",
   "description": "Raise the work git lost. Finds dropped commits, stashes, branches and nameless files, and snapshots your work before an agent runs a destructive git command.",
   "type": "module",
-  "bin": { "graveyard": "bin/graveyard.js" },
-  "files": ["bin", "src"],
-  "engines": { "node": ">=18" },
-  "scripts": { "test": "node --test test/*.test.js" },
-  "license": "MIT"
+  "bin": {
+    "graveyard": "bin/graveyard.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.187.0"
+  }
 }

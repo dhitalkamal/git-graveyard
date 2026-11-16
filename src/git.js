@@ -4,7 +4,8 @@ export class GitError extends Error {}
 
 export function git(cwd, args, { env, input, buffer = false } = {}) {
   try {
-    return execFileSync('git', args, {
+    // the shim sets GRAVEYARD_REAL_GIT so graveyard's own git calls skip the shim
+    return execFileSync(process.env.GRAVEYARD_REAL_GIT || 'git', args, {
       cwd,
       input,
       env: { ...process.env, ...env },

@@ -1,11 +1,30 @@
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scan } from './scan.js';
 import { revive } from './revive.js';
 
 const PAGE = readFileSync(fileURLToPath(new URL('./ui.html', import.meta.url)), 'utf8');
+const THREE_ROOT = dirname(dirname(createRequire(import.meta.url).resolve('three')));
+const VENDOR_DIRS = [join3('build'), join3('examples', 'jsm')];
+function join3(...p) {
+  return resolve(THREE_ROOT, ...p) + sep;
+}
+/** Map /vendor/three/<path> to a .js file inside three's build/ or examples/jsm/, nowhere else. */
+function vendorFile(pathname) {
+  const rel = decodeURIComponent(pathname.slice('/vendor/three/'.length));
+  const file = resolve(THREE_ROOT, rel);
+  if (!file.endsWith('.js') || !VENDOR_DIRS.some((d) => file.startsWith(d))) return null;
+  try {
+    return readFileSync(file);
+  } catch {
+    return null;
+  }
+}
+
 const json = (res, code, body) => {
   res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' });
   res.end(JSON.stringify(body, (k, v) => (v === Infinity ? null : v)));
@@ -26,10 +45,16 @@ export function startServer(repo, { port = 4747 } = {}) {
       if (req.method === 'GET' && url.pathname === '/') {
         res.writeHead(200, {
           'content-type': 'text/html; charset=utf-8',
-          'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'",
+          'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:",
           'cache-control': 'no-store',
         });
         return res.end(PAGE.replace('__TOKEN__', token));
+      }
+      if (req.method === 'GET' && url.pathname.startsWith('/vendor/three/')) {
+        const body = vendorFile(url.pathname);
+        if (!body) return json(res, 404, { error: 'not found' });
+        res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'max-age=3600' });
+        return res.end(body);
       }
       if (req.method === 'GET' && url.pathname === '/api/tombs') {
         const r = scan(repo);

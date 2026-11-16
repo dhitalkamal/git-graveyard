@@ -195,8 +195,8 @@ test('ui server: serves page, lists tombs, revive needs token, rejects bad host'
   try {
     const page = await (await fetch(url)).text();
     assert.ok(page.includes(token));
-    const script = page.match(/<script>([\s\S]*)<\/script>/)[1];
-    assert.doesNotThrow(() => new Function(script), 'ui script parses');
+    assert.match(page, /<script type="importmap">/);
+    assert.match(page, /<script type="module">/);
 
     const tombs = await (await fetch(url + 'api/tombs')).json();
     const t = tombs.tombstones.find((x) => x.title === 'lost one');
@@ -215,6 +215,53 @@ test('ui server: serves page, lists tombs, revive needs token, rejects bad host'
       });
     });
     assert.equal(bad, 403);
+  } finally {
+    server.close();
+    rmSync(d, { recursive: true, force: true });
+  }
+});
+
+test('git shim snapshots before destructive commands and passes everything through', async () => {
+  const { installShim } = await import('../src/shim.js');
+  const d = repo();
+  commit(d, 'a.txt', '1\n', 'base');
+  const shimDir = mkdtempSync(join(tmpdir(), 'gy-shim-'));
+  const bin = new URL('../bin/graveyard.js', import.meta.url).pathname;
+  const r = installShim({ dir: shimDir, bin });
+  assert.ok(r.realGit && !r.realGit.startsWith(shimDir));
+  const env = { ...process.env, PATH: `${shimDir}:${process.env.PATH}` };
+  const g = (...a) => execFileSync('git', a, { cwd: d, env, encoding: 'utf8' });
+
+  assert.match(g('status', '--short'), /^$/);
+  writeFileSync(join(d, 'a.txt'), 'unsaved\n');
+  writeFileSync(join(d, 'n.txt'), 'untracked\n');
+  g('diff', '--stat'); // safe: no snapshot
+  assert.equal(sh(d, 'for-each-ref', 'refs/graveyard'), '');
+  g('reset', '-q', '--hard');
+  g('clean', '-fdq');
+  const refs = sh(d, 'for-each-ref', '--format=%(refname)', 'refs/graveyard').split('\n').filter(Boolean);
+  assert.equal(refs.length, 2, 'reset and clean each saved a snapshot');
+  assert.equal(sh(d, 'show', `${refs[0]}:a.txt`), 'unsaved');
+  assert.equal(sh(d, 'show', `${refs[0]}:n.txt`), 'untracked');
+  assert.equal(existsSync(join(d, 'n.txt')), false);
+
+  // -C works from another directory
+  writeFileSync(join(d, 'a.txt'), 'again\n');
+  execFileSync('git', ['-C', d, 'checkout', '--', '.'], { cwd: tmpdir(), env });
+  assert.equal(sh(d, 'for-each-ref', '--format=%(refname)', 'refs/graveyard').split('\n').length, 3);
+  rmSync(d, { recursive: true, force: true });
+  rmSync(shimDir, { recursive: true, force: true });
+});
+
+test('vendor route serves three.js and blocks traversal', async () => {
+  const { startServer } = await import('../src/server.js');
+  const d = repo();
+  const { server, url } = await startServer(d, { port: 0 });
+  try {
+    assert.equal((await fetch(url + 'vendor/three/build/three.module.js')).status, 200);
+    assert.equal((await fetch(url + 'vendor/three/examples/jsm/controls/OrbitControls.js')).status, 200);
+    assert.equal((await fetch(url + 'vendor/three/package.json')).status, 404);
+    assert.equal((await fetch(url + 'vendor/three/%2e%2e/%2e%2e/package.json')).status, 404);
   } finally {
     server.close();
     rmSync(d, { recursive: true, force: true });
